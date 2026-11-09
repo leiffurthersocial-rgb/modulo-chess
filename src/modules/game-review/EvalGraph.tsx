@@ -15,7 +15,7 @@ interface Props {
 
 const W = 600;
 const H = 140;
-const MARK = new Set(["inaccuracy", "mistake", "blunder"]);
+const MARK = new Set(["brilliant", "great", "inaccuracy", "mistake", "miss", "blunder"]);
 
 /** Win-probability area chart (White above the midline). Click or arrow-key to jump. */
 function EvalGraphImpl({ line, evals, moves, currentId, onSelect }: Props) {

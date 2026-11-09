@@ -4,12 +4,12 @@ import { ReviewPanel } from "./ReviewPanel";
 
 export const gameReviewModule: ModuleManifest = {
   id: "game-review",
-  name: "Review",
-  description: "Full-game analysis with an eval graph, accuracy and move classification.",
+  name: "Report",
+  description: "Game report: move classifications, accuracy and an Elo estimate for both players.",
   icon: LineChart,
-  route: "/review",
+  route: "/analysis",
   group: "analysis",
-  order: 30,
+  order: 20,
   panel: ReviewPanel,
   shortcut: "r",
 };

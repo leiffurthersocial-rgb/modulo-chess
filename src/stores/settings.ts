@@ -44,7 +44,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showArrows: true,
   showEvalBar: true,
   engine: { threads: 0, hashMb: 64, depthLimit: 0, multiPv: 3, flavor: "auto" },
-  reviewDepth: 14,
+  reviewDepth: 16,
 };
 
 export const SETTINGS_STORAGE_KEY = "modulo-chess:settings";
