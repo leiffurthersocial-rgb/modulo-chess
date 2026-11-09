@@ -307,3 +307,23 @@ export function checkFen(input: string): { ok: true; fen: string } | { ok: false
   }
   return { ok: true, fen };
 }
+
+export type DetectedInput =
+  { kind: "fen"; fen: string } | { kind: "pgn"; games: ParsedGame[] } | { kind: "error"; message: string };
+
+/** FEN if it validates as one, otherwise PGN. */
+export function detectGameInput(text: string): DetectedInput {
+  const trimmed = text.trim();
+  if (!trimmed) return { kind: "error", message: "Paste a PGN or a FEN first." };
+  const looksLikeFen = /^[rnbqkpRNBQKP1-8]+(\/[rnbqkpRNBQKP1-8]+){7}\s+[wb]\b/.test(trimmed);
+  if (looksLikeFen) {
+    const r = checkFen(trimmed);
+    return r.ok ? { kind: "fen", fen: r.fen } : { kind: "error", message: `Invalid FEN: ${r.error}` };
+  }
+  try {
+    return { kind: "pgn", games: parsePgn(trimmed) };
+  } catch (e) {
+    const msg = e instanceof PgnError ? e.message : "Could not read this PGN.";
+    return { kind: "error", message: msg };
+  }
+}
