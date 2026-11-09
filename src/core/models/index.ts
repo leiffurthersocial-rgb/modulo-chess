@@ -24,7 +24,8 @@ export interface UserProfile {
 
 export type GameSource =
   | { kind: "analysis" }
-  | { kind: "engine"; strength: { kind: "skill"; level: number } | { kind: "elo"; elo: number } }
+  | { kind: "engine"; strength: { elo: number } }
+  | { kind: "elo-estimate"; opponentElo: number }
   | { kind: "import"; fileName?: string }
   | { kind: "online"; gameId: Id; timeControl: string }
   | { kind: "database"; databaseId: Id };

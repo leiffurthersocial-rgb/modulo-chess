@@ -17,7 +17,8 @@ import {
 
 export type GameMode = "analysis" | "play";
 
-export type Strength = { kind: "skill"; level: number } | { kind: "elo"; elo: number };
+/** Opponent strength as an Elo rating (250–3190). See core/engine/strength.ts. */
+export type Strength = { elo: number };
 
 export interface PlayConfig {
   userColor: "w" | "b";
@@ -61,10 +62,12 @@ export interface GameState {
   promote: (id: string) => void;
   setHeaders: (h: PgnHeaders) => void;
   setResult: (r: string) => void;
-  startPlay: (config: PlayConfig, fromCurrent: boolean) => void;
+  startPlay: (config: PlayConfig, options?: { fromCurrent?: boolean; event?: string }) => void;
   stopPlay: () => void;
   takeback: () => void;
   setThinking: (t: boolean) => void;
+  /** Changes the opponent's strength mid-game (used by the adaptive Elo estimate). */
+  setStrength: (s: Strength) => void;
   setPreview: (p: PreviewState | null) => void;
 }
 
@@ -77,7 +80,7 @@ export const useGame = create<GameState>()((set, get) => ({
   result: "*",
   orientation: "w",
   mode: "analysis",
-  play: { userColor: "w", strength: { kind: "skill", level: 8 } },
+  play: { userColor: "w", strength: { elo: 1200 } },
   thinking: false,
   preview: null,
   gameKey: 0,
@@ -159,46 +162,30 @@ export const useGame = create<GameState>()((set, get) => ({
   promote: (id) => set((s) => ({ tree: promoteVariation(s.tree, id) })),
   setHeaders: (headers) => set({ headers }),
   setResult: (result) => set({ result }),
-  startPlay: (play, fromCurrent) => {
+  startPlay: (play, { fromCurrent = false, event = "Casual game vs Stockfish" } = {}) => {
     const s = get();
-    const engineName = `Stockfish (${play.strength.kind === "elo" ? `${play.strength.elo} Elo` : `level ${play.strength.level}`})`;
+    const engineName = `Stockfish (${play.strength.elo})`;
     const headers: PgnHeaders = {
-      Event: "Casual game vs Stockfish",
+      Event: event,
       Site: "Modulo: Chess",
       Date: pgnDate(new Date()),
       White: play.userColor === "w" ? "You" : engineName,
       Black: play.userColor === "b" ? "You" : engineName,
     };
-    if (fromCurrent) {
-      // Continue from the current position as a fresh game.
-      const tree = createTree(s.tree.nodes[s.currentId].fen);
-      set({
-        tree,
-        currentId: tree.rootId,
-        headers,
-        result: "*",
-        mode: "play",
-        play,
-        thinking: false,
-        preview: null,
-        orientation: play.userColor,
-        gameKey: s.gameKey + 1,
-      });
-    } else {
-      const tree = createTree();
-      set({
-        tree,
-        currentId: tree.rootId,
-        headers,
-        result: "*",
-        mode: "play",
-        play,
-        thinking: false,
-        preview: null,
-        orientation: play.userColor,
-        gameKey: s.gameKey + 1,
-      });
-    }
+    // Optionally continue from the current position as a fresh game.
+    const tree = createTree(fromCurrent ? s.tree.nodes[s.currentId].fen : undefined);
+    set({
+      tree,
+      currentId: tree.rootId,
+      headers,
+      result: "*",
+      mode: "play",
+      play,
+      thinking: false,
+      preview: null,
+      orientation: play.userColor,
+      gameKey: s.gameKey + 1,
+    });
   },
   stopPlay: () => set({ mode: "analysis", thinking: false }),
   takeback: () => {
@@ -220,6 +207,7 @@ export const useGame = create<GameState>()((set, get) => ({
     set({ tree: res ? res.tree : tree, currentId: id, result: "*", thinking: false });
   },
   setThinking: (thinking) => set({ thinking }),
+  setStrength: (strength) => set((s) => ({ play: { ...s.play, strength } })),
   setPreview: (preview) => set({ preview }),
 }));
 
