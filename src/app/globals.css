@@ -1,26 +1,476 @@
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Modulo design tokens. Components use the Tailwind aliases (bg-surface,
+   text-muted, …) which resolve to these variables, so themes are pure CSS.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a0c0f;
+  --bg-glow: rgba(196, 242, 82, 0.05);
+  --surface: #111419;
+  --surface-2: #171b21;
+  --surface-3: #1f242c;
+  --surface-hover: #232932;
+  --border: #222831;
+  --border-strong: #2f3741;
+  --text: #eceef1;
+  --muted: #a1a9b5;
+  --faint: #6f7886;
+  --accent: #c4f252;
+  --accent-strong: #d8ff73;
+  --accent-ink: #0b0e07;
+  --accent-soft: rgba(196, 242, 82, 0.12);
+  --focus: #c4f252;
+  --danger: #ff6b6b;
+  --warning: #f5c451;
+  --eval-white: #f1f1ec;
+  --eval-black: #23272e;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 20px 50px -20px rgba(0, 0, 0, 0.6);
+  --board-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --scrim: rgba(4, 6, 9, 0.6);
+
+  --c-best: #4ed6a6;
+  --c-excellent: #7fd18c;
+  --c-good: #9fb7a5;
+  --c-book: #c3a17a;
+  --c-inaccuracy: #f2c14e;
+  --c-mistake: #f28a3d;
+  --c-blunder: #f25454;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f4f0;
+  --bg-glow: rgba(90, 130, 20, 0.06);
+  --surface: #ffffff;
+  --surface-2: #f7f7f3;
+  --surface-3: #ecece6;
+  --surface-hover: #e7e7e0;
+  --border: #e3e3dc;
+  --border-strong: #cfcfc6;
+  --text: #15181d;
+  --muted: #535c69;
+  --faint: #7f8794;
+  --accent: #4f7a0e;
+  --accent-strong: #3f6409;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(79, 122, 14, 0.1);
+  --focus: #3f6409;
+  --danger: #c62f2f;
+  --warning: #9a6700;
+  --eval-white: #fbfbf8;
+  --eval-black: #2a2e35;
+  --shadow: 0 1px 2px rgba(20, 24, 30, 0.04), 0 12px 40px -18px rgba(20, 24, 30, 0.18);
+  --board-shadow: 0 24px 60px -28px rgba(20, 24, 30, 0.45), 0 0 0 1px rgba(20, 24, 30, 0.06);
+  --scrim: rgba(20, 24, 30, 0.35);
+
+  --c-best: #13976b;
+  --c-excellent: #3e9a4f;
+  --c-good: #5f7b67;
+  --c-book: #8b6a43;
+  --c-inaccuracy: #b7860b;
+  --c-mistake: #c8611a;
+  --c-blunder: #cf2e2e;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-fast: 140ms;
+  --dur: 220ms;
+  --dur-slow: 420ms;
+  --piece-dur: 190ms;
+  --radius: 14px;
+
+  /* Board highlight overlays (theme-independent; the board has its own colours). */
+  --hl-last: rgba(214, 255, 102, 0.42);
+  --hl-selected: rgba(214, 255, 102, 0.55);
+  --hl-dest: rgba(10, 14, 20, 0.22);
+  --hl-check: rgba(255, 64, 64, 0.85);
+  --hl-hover: rgba(255, 255, 255, 0.55);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (prefers-reduced-motion: reduce) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --dur-fast: 0ms;
+    --dur: 0ms;
+    --dur-slow: 0ms;
+    --piece-dur: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
   }
 }
 
+:root[data-animations="off"] {
+  --piece-dur: 0ms;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-best: var(--c-best);
+  --color-excellent: var(--c-excellent);
+  --color-good: var(--c-good);
+  --color-book: var(--c-book);
+  --color-inaccuracy: var(--c-inaccuracy);
+  --color-mistake: var(--c-mistake);
+  --color-blunder: var(--c-blunder);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --ease-out: var(--ease-out);
+  --radius-panel: var(--radius);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+}
+
+body {
+  background: radial-gradient(1200px 600px at 50% -10%, var(--bg-glow), transparent 60%), var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thin, theme-aware scrollbars */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: 8px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-in {
+  animation: fade-in var(--dur) var(--ease-out) both;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+/* ── Board ─────────────────────────────────────────────────────────────── */
+
+.board {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--board-shadow);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  contain: layout paint;
+}
+.board-squares {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+}
+.board-square {
+  position: relative;
+}
+.board-square[data-dark="true"] {
+  background: var(--sq-dark);
+}
+.board-square[data-dark="false"] {
+  background: var(--sq-light);
+}
+.board-square .hl {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.board-square .hl-last {
+  background: var(--hl-last);
+  mix-blend-mode: multiply;
+}
+:root[data-theme="dark"] .board-square .hl-last {
+  mix-blend-mode: normal;
+  opacity: 0.85;
+}
+.board-square .hl-selected {
+  background: var(--hl-selected);
+}
+.board-square .hl-check {
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--hl-check) 0%,
+    rgba(255, 64, 64, 0.45) 40%,
+    transparent 72%
+  );
+}
+.board-square .hl-dest::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30%;
+  height: 30%;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: var(--hl-dest);
+  animation: pop-in var(--dur-fast) var(--ease-out) both;
+}
+.board-square .hl-capture::after {
+  content: "";
+  position: absolute;
+  inset: 4%;
+  border-radius: 999px;
+  border: 0.45em solid var(--hl-dest);
+  animation: pop-in var(--dur-fast) var(--ease-out) both;
+}
+.board-square .hl-hover {
+  box-shadow: inset 0 0 0 0.25em var(--hl-hover);
+}
+.board-square .hl-focus {
+  box-shadow: inset 0 0 0 3px var(--focus);
+}
+.board-coord {
+  position: absolute;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(8px, 1.6cqw, 12px);
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0.9;
+}
+.board-coord.file {
+  right: 6%;
+  bottom: 5%;
+}
+.board-coord.rank {
+  left: 6%;
+  top: 6%;
+}
+
+.board-pieces {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.piece {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12.5%;
+  height: 12.5%;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  will-change: transform;
+  transition: transform var(--piece-dur) var(--ease-out);
+}
+.piece[data-dragging="true"] {
+  transition: none;
+  z-index: 20;
+  transform-origin: center;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.35));
+}
+.piece[data-ghost="true"] {
+  opacity: 0.3;
+}
+.board[data-interactive="true"] .board-square[data-movable="true"] {
+  cursor: grab;
+}
+.board[data-dragging="true"],
+.board[data-dragging="true"] * {
+  cursor: grabbing !important;
+}
+.board-arrows {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.board-badge {
+  position: absolute;
+  z-index: 15;
+  width: 4.6%;
+  height: 4.6%;
+  min-width: 16px;
+  min-height: 16px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: clamp(8px, 1.5cqw, 12px);
+  color: #fff;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 0 0 2px rgba(255, 255, 255, 0.9);
+  transform: translate(-50%, -50%);
+  animation: pop-in var(--dur) var(--ease-spring) both;
+  pointer-events: none;
+}
+.board-wrap {
+  container-type: inline-size;
+}
+
+/* ── Range input ───────────────────────────────────────────────────────── */
+.modulo-range {
+  appearance: none;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+.modulo-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--accent) var(--pct), var(--surface-3) var(--pct));
+}
+.modulo-range::-moz-range-track {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--surface-3);
+}
+.modulo-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+.modulo-range::-webkit-slider-thumb {
+  appearance: none;
+  margin-top: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--text);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.modulo-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--text);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.modulo-range:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.modulo-range:focus-visible {
+  outline: none;
+}
+.modulo-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--focus);
+}
+.modulo-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--focus);
+}
+
+/* ── Shell sizing ─────────────────────────────────────────────────────────
+   Mobile: the board takes the full width; the bottom sheet's resting ("peek")
+   height is whatever vertical space is left. Desktop: the board column fits
+   the viewport height. --board-col includes the eval-bar column. */
+.app-shell {
+  --board-col: max(240px, min(100vw - 24px, 640px, 100dvh - 290px));
+  --sheet-peek: max(104px, 100dvh - var(--board-col) - 222px);
+}
+@media (min-width: 1024px) {
+  .app-shell {
+    --board-col: max(360px, min(880px, 100dvh - 186px));
+  }
 }
