@@ -1,0 +1,6 @@
+.next
+node_modules
+public/stockfish
+src/modules/openings/data/openings.json
+data/openings
+package-lock.json
