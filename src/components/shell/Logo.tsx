@@ -1,0 +1,35 @@
+/**
+ * The Modulo mark: a modulo operator (%) whose dots are chess squares.
+ */
+export function LogoMark({ className, title }: { className?: string; title?: string }) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      className={className}
+      role={title ? "img" : undefined}
+      aria-hidden={title ? undefined : true}
+    >
+      {title ? <title>{title}</title> : null}
+      <rect
+        x="1"
+        y="1"
+        width="30"
+        height="30"
+        rx="9"
+        fill="var(--logo-bg, #11151b)"
+        stroke="var(--logo-ring, #2a313b)"
+      />
+      <rect x="7.5" y="7.5" width="6.5" height="6.5" rx="1.6" fill="var(--logo-light, #eceef1)" />
+      <rect x="18" y="18" width="6.5" height="6.5" rx="1.6" fill="var(--accent, #c4f252)" />
+      <path d="M22.6 8.6 9.4 23.4" stroke="var(--accent, #c4f252)" strokeWidth="2.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function Wordmark({ className }: { className?: string }) {
+  return (
+    <span className={`font-display text-text text-[22px] leading-none tracking-tight ${className ?? ""}`}>
+      Modulo<span className="text-accent">:</span> <span className="italic">Chess</span>
+    </span>
+  );
+}
