@@ -19,7 +19,7 @@ export interface ModuleManifest {
   /** One-line description (used for page metadata and tooltips). */
   description: string;
   icon: ComponentType<ModuleIconProps>;
-  /** Route that opens this module's panel, e.g. "/review". "/" for the default module. */
+  /** Route that opens this module's panel, e.g. "/analysis". "/" for the default module. */
   route?: string;
   /** Sort order within its group (ascending). */
   order: number;

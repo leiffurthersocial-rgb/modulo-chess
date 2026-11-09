@@ -54,7 +54,7 @@ async function main() {
   const page = await ctx.newPage();
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  await page.goto(`${BASE}/analysis`);
+  await page.goto(`${BASE}/engine`);
   await page.waitForLoadState("networkidle");
   const isolated = await page.evaluate(() => crossOriginIsolated && typeof SharedArrayBuffer !== "undefined");
   check("Page is cross-origin isolated (SharedArrayBuffer available)", isolated);
@@ -121,12 +121,13 @@ async function main() {
   const offText = await statusText(page);
   check("Stop halts analysis cleanly", off1 === off2 && /Engine is off/.test(offText), offText);
 
-  // ── 2. Import PGN with variations and run a full-game review ───────────
-  await page.goto(`${BASE}/import`);
+  // ── 2. Load a PGN in the Report tab: analysis + Elo estimate start automatically ──
+  await page.goto(`${BASE}/analysis`);
   await page.waitForLoadState("networkidle");
   await page.getByLabel("PGN or FEN").filter({ visible: true }).fill(PGN);
-  await page.getByRole("button", { name: "Load", exact: true }).filter({ visible: true }).click();
-  await page.waitForTimeout(300);
+  const r0 = Date.now();
+  await page.getByRole("button", { name: "Analyse", exact: true }).filter({ visible: true }).click();
+  await page.waitForSelector("[data-report-done]", { timeout: 120000 });
   const variationShown = await page
     .locator("[aria-label='Move list']")
     .filter({ visible: true })
@@ -135,24 +136,20 @@ async function main() {
     "PGN with variations loaded into the move list",
     /Bc5/.test(variationShown ?? "") && /Nf3#/.test(variationShown ?? ""),
   );
-  await page.getByRole("tab", { name: "Review" }).first().click();
-  await page
-    .getByRole("button", { name: /Review game/ })
-    .filter({ visible: true })
-    .click();
-  const r0 = Date.now();
-  await page.waitForSelector('h3:text-is("Accuracy")', { timeout: 120000 });
-  const summary = await page.locator('section:has(h3:text-is("Accuracy"))').textContent();
+  const quality = await page.locator('section:has(h3:text-is("Move quality"))').textContent();
   check(
-    "Full-game review completes with accuracy and classifications",
-    /Blunder/.test(summary ?? ""),
+    "Game report completes with move classifications",
+    /Blunder/.test(quality ?? ""),
     `${Date.now() - r0} ms`,
   );
-  const blunders = await page.locator('section:has(h3:text-is("Key moments")) li').count();
+  const report = (await page.locator("[data-report-done]").textContent()) ?? "";
+  const elos = [...report.matchAll(/Estimated Elo\s*(\d{3,4})/g)].map((m) => m[1]);
+  check("Report estimates both players' Elo", elos.length === 2, elos.join(" / "));
+  const moments = await page.locator('section:has(h3:text-is("Key moments")) li').count();
   check(
     "Key moments detected (white's 6. Rf1/7. Be2 sequence loses)",
-    blunders >= 1,
-    `${blunders} key moments`,
+    moments >= 1,
+    `${moments} key moments`,
   );
   await page.screenshot({ path: `${SHOTS}/desktop-review.png` });
 
@@ -225,7 +222,7 @@ async function main() {
     delete headers["cross-origin-opener-policy"];
     return route.fulfill({ response: res, headers });
   });
-  await p2.goto(`${BASE}/analysis`);
+  await p2.goto(`${BASE}/engine`);
   await p2.waitForLoadState("networkidle");
   const iso2 = await p2.evaluate(() => crossOriginIsolated);
   await p2

@@ -10,6 +10,8 @@ export const importExportModule: ModuleManifest = {
   route: "/import",
   group: "analysis",
   order: 50,
+  // Loading lives in the Report tab; this full import/export page stays at /import.
+  hidden: true,
   panel: ImportExportPanel,
   shortcut: "i",
 };

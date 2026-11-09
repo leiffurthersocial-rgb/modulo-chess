@@ -3,6 +3,7 @@
 import { ArrowUpToLine, ListTree, Trash2 } from "lucide-react";
 import { memo, useEffect, useRef, type ReactNode } from "react";
 import { CLASS_META } from "@/core/analysis/classify";
+import { ClassIcon } from "@/components/analysis/ClassIcon";
 import { fullMoveNumber, isOnMainline, sideToMove, type GameTree, type MoveNode } from "@/core/chess/tree";
 import { EmptyState, IconButton, cx } from "@/components/ui/primitives";
 import { useGame } from "@/stores/game";
@@ -34,7 +35,8 @@ function MoveButton({
     ?.map((n) => NAG_SYMBOLS[n])
     .filter(Boolean)
     .join("");
-  const showMark = review && ["inaccuracy", "mistake", "blunder", "best"].includes(review.class);
+  // Like chess.com: every classified move gets its icon except the unremarkable ones.
+  const showMark = review && review.class !== "good" && review.class !== "excellent";
   return (
     <button
       type="button"
@@ -52,15 +54,7 @@ function MoveButton({
       {prefix ? <span className={cx(active ? "opacity-70" : "text-faint")}>{prefix}</span> : null}
       <span>{node.san}</span>
       {nag ? <span className={active ? "" : "text-muted"}>{nag}</span> : null}
-      {showMark && meta ? (
-        <span
-          aria-hidden
-          className="ml-0.5 grid size-[15px] place-items-center rounded-full text-[9px] font-bold text-white"
-          style={{ background: `var(--c-${review!.class})` }}
-        >
-          {meta.symbol}
-        </span>
-      ) : null}
+      {showMark ? <ClassIcon cls={review!.class} size={15} className="ml-0.5" /> : null}
     </button>
   );
 }

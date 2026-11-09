@@ -1,16 +1,17 @@
 "use client";
 
-import { AlertTriangle, Cpu, Play, RotateCcw } from "lucide-react";
+import { AlertTriangle, ChevronDown, Play, RotateCcw } from "lucide-react";
 import { memo, useMemo } from "react";
 import { formatEval, whiteWinPercent } from "@/core/engine/evaluation";
 import type { EngineLine } from "@/core/engine/types";
 import { uciLineToSan, fullMoveNumber, sideToMove } from "@/core/chess/tree";
-import { Button, EmptyState, IconButton, Section, Segmented, cx } from "@/components/ui/primitives";
+import { Button, IconButton, Section, Segmented, cx } from "@/components/ui/primitives";
 import { useCurrentNode, useCurrentStatus } from "@/hooks/useGameSelectors";
 import { useEngine } from "@/stores/engine";
 import { useGame } from "@/stores/game";
 import { useReview } from "@/stores/review";
 import { useSettings } from "@/stores/settings";
+import { OpeningSummary } from "@/modules/openings/OpeningSummary";
 
 /** "Stockfish 19 Lite Multithreaded WASM" → "Stockfish 19 Lite · multi-threaded" */
 function engineLabel(name: string, flavor: "multi" | "single" | null): string {
@@ -169,15 +170,21 @@ export function EnginePanel() {
         </Section>
       ) : null}
 
+      <OpeningSummary />
+
       {!enabled && mode === "analysis" ? (
-        <EmptyState icon={<Cpu className="size-5" />} title="Private, in-browser analysis">
-          Stockfish 19 runs entirely on your device via WebAssembly. Nothing is uploaded. Press <b>Analyze</b>{" "}
-          to start.
-        </EmptyState>
+        <p className="text-faint px-1 text-xs leading-relaxed">
+          Stockfish 19 runs entirely on your device. Press <b className="text-muted">Analyze</b> (or E) for
+          live lines.
+        </p>
       ) : null}
 
-      <Section title="Engine settings">
-        <div className="flex flex-col gap-3">
+      <details className="group bg-surface-2 rounded-xl p-3.5">
+        <summary className="font-display text-faint flex cursor-pointer list-none items-center justify-between text-[13px] font-extrabold tracking-wide uppercase">
+          Engine settings
+          <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
+        </summary>
+        <div className="mt-3 flex flex-col gap-3">
           <div>
             <p className="text-text mb-1.5 text-sm">Lines (MultiPV)</p>
             <Segmented
@@ -206,7 +213,7 @@ export function EnginePanel() {
           </div>
           <ThreadsHash threads={threads} />
         </div>
-      </Section>
+      </details>
     </div>
   );
 }

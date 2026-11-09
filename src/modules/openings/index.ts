@@ -10,6 +10,8 @@ export const openingsModule: ModuleManifest = {
   route: "/openings",
   group: "analysis",
   order: 40,
+  // Shown inline in the Engine tab; the full panel stays reachable at /openings.
+  hidden: true,
   panel: OpeningsPanel,
   shortcut: "o",
 };

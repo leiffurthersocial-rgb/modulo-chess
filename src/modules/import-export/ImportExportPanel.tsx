@@ -2,34 +2,16 @@
 
 import { Check, ClipboardCopy, Download, FileUp, RotateCcw, Upload } from "lucide-react";
 import { useId, useMemo, useRef, useState } from "react";
-import { checkFen, parsePgn, serializePgn, PgnError, type ParsedGame } from "@/core/chess/pgn";
+import { detectGameInput, serializePgn, type ParsedGame } from "@/core/chess/pgn";
 import { createTree } from "@/core/chess/tree";
 import { Button, Section, cx } from "@/components/ui/primitives";
 import { useCurrentNode } from "@/hooks/useGameSelectors";
+import { useRouter } from "next/navigation";
 import { useGame } from "@/stores/game";
+import { useReview } from "@/stores/review";
 import { useToasts } from "@/stores/toasts";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
-
-type Detected =
-  { kind: "fen"; fen: string } | { kind: "pgn"; games: ParsedGame[] } | { kind: "error"; message: string };
-
-/** FEN if it validates as one, otherwise PGN. */
-export function detectInput(text: string): Detected {
-  const trimmed = text.trim();
-  if (!trimmed) return { kind: "error", message: "Paste a PGN or a FEN first." };
-  const looksLikeFen = /^[rnbqkpRNBQKP1-8]+(\/[rnbqkpRNBQKP1-8]+){7}\s+[wb]\b/.test(trimmed);
-  if (looksLikeFen) {
-    const r = checkFen(trimmed);
-    return r.ok ? { kind: "fen", fen: r.fen } : { kind: "error", message: `Invalid FEN: ${r.error}` };
-  }
-  try {
-    return { kind: "pgn", games: parsePgn(trimmed) };
-  } catch (e) {
-    const msg = e instanceof PgnError ? e.message : "Could not read this PGN.";
-    return { kind: "error", message: msg };
-  }
-}
 
 function gameTitle(g: ParsedGame, i: number): string {
   const w = g.headers.White ?? "?";
@@ -42,6 +24,7 @@ function gameTitle(g: ParsedGame, i: number): string {
 export function ImportExportPanel() {
   const loadParsed = useGame((s) => s.loadParsed);
   const push = useToasts((s) => s.push);
+  const router = useRouter();
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [choices, setChoices] = useState<ParsedGame[] | null>(null);
@@ -55,10 +38,15 @@ export function ImportExportPanel() {
     setError(null);
     const moves = Object.keys(g.tree.nodes).length - 1;
     push({ tone: "success", title: "Game loaded", body: `${gameTitle(g, 0)} · ${moves} moves` });
+    // Straight to the report: analysis (and both players' Elo estimate) starts automatically.
+    if (moves > 0) {
+      useReview.getState().patch({ autoStart: true });
+      router.push("/analysis");
+    }
   };
 
   const importText = (input: string) => {
-    const d = detectInput(input);
+    const d = detectGameInput(input);
     if (d.kind === "error") {
       setError(d.message);
       return;

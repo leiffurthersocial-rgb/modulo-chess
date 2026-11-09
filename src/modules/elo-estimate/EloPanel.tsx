@@ -9,6 +9,7 @@ import { strengthName } from "@/core/engine/strength";
 import { Button, Section, cx } from "@/components/ui/primitives";
 import { useCurrentStatus } from "@/hooks/useGameSelectors";
 import { useElo, type EloGameRecord, type EloMode } from "@/stores/elo";
+import { useReview } from "@/stores/review";
 import { useGame } from "@/stores/game";
 import {
   abandonSession,
@@ -341,7 +342,8 @@ function ResultCard() {
         <Button
           onClick={() => {
             useGame.getState().stopPlay();
-            router.push("/review");
+            useReview.getState().patch({ autoStart: true });
+            router.push("/analysis");
           }}
         >
           <Microscope className="size-4" aria-hidden /> Review game

@@ -4,7 +4,7 @@ import { routeSegments } from "@/core/modules/registry";
 import { registry } from "@/modules/registry";
 
 /**
- * Every module route ("/", "/review", "/settings", …) is generated from the module
+ * Every module route ("/", "/analysis", "/settings", …) is generated from the module
  * registry. The workspace itself lives in the root layout so engine and board state
  * persist across navigation; this page only provides per-module metadata.
  */

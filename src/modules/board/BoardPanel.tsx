@@ -9,6 +9,7 @@ import { playSound } from "@/core/sound/sounds";
 import { Button, Section, Segmented, Slider, Switch, cx } from "@/components/ui/primitives";
 import { useCurrentStatus } from "@/hooks/useGameSelectors";
 import { useElo } from "@/stores/elo";
+import { useReview } from "@/stores/review";
 import { useGame } from "@/stores/game";
 import { useSettings } from "@/stores/settings";
 
@@ -205,7 +206,8 @@ function PlayingPanel() {
           <Button
             onClick={() => {
               stopPlay();
-              router.push("/review");
+              useReview.getState().patch({ autoStart: true });
+              router.push("/analysis");
             }}
           >
             <Microscope className="size-4" aria-hidden /> Review

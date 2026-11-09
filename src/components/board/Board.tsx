@@ -16,7 +16,7 @@ export interface BoardMove {
 
 export interface BoardBadge {
   square: string;
-  label: string;
+  label: React.ReactNode;
   color: string;
   title: string;
 }

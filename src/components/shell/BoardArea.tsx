@@ -3,6 +3,7 @@
 import { Bot, User } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { CLASS_META } from "@/core/analysis/classify";
+import { ClassGlyph } from "@/components/analysis/ClassIcon";
 import { playSound } from "@/core/sound/sounds";
 import { Board, type BoardMove } from "@/components/board/Board";
 import type { BoardArrow } from "@/components/board/Arrows";
@@ -75,29 +76,42 @@ export function BoardArea() {
     status.kind === "playing" &&
     (mode === "analysis" || (isLeaf && result === "*" && !thinking && status.turn === play.userColor));
 
-  const arrows = useMemo<BoardArrow[]>(() => {
+  // Engine arrows while analysing; while reviewing, chess.com-style "best was" arrow.
+  const reviewArrow = useMemo<BoardArrow[]>(() => {
     if (
       preview ||
-      mode === "play" ||
-      !s.showArrows ||
-      !engineEnabled ||
-      !snapshot ||
-      snapshot.fen !== node.fen
+      !review?.bestUci ||
+      ["best", "brilliant", "great", "book", "forced"].includes(review.class)
     )
       return [];
+    const u = review.bestUci;
+    return [{ from: u.slice(0, 2), to: u.slice(2, 4), color: "var(--c-best)", opacity: 0.9, width: 1 }];
+  }, [preview, review]);
+  // Arrows only change when the set of first moves changes, not on every engine update.
+  const engineArrowKey =
+    !preview && mode !== "play" && s.showArrows && engineEnabled && snapshot && snapshot.fen === node.fen
+      ? snapshot.lines.map((l) => l.pv[0] ?? "").join(",")
+      : "";
+  const engineArrows = useMemo<BoardArrow[]>(() => {
+    if (!engineArrowKey) return [];
     const seen = new Set<string>();
-    return snapshot.lines.flatMap((l, i) => {
-      const uci = l.pv[0];
+    return engineArrowKey.split(",").flatMap((uci, i) => {
       if (!uci || seen.has(uci)) return [];
       seen.add(uci);
       return [{ from: uci.slice(0, 2), to: uci.slice(2, 4), color: "var(--arrow)", ...ARROW_STYLE[i] }];
     });
-  }, [preview, mode, s.showArrows, engineEnabled, snapshot, node.fen]);
+  }, [engineArrowKey]);
+  const arrows = engineArrows.length ? engineArrows : reviewArrow;
 
   const badge = useMemo(() => {
     if (preview || !review || !node.to) return null;
     const meta = CLASS_META[review.class];
-    return { square: node.to, label: meta.symbol, color: `var(--c-${review.class})`, title: meta.label };
+    return {
+      square: node.to,
+      label: <ClassGlyph cls={review.class} size={22} />,
+      color: `var(--c-${review.class})`,
+      title: meta.label,
+    };
   }, [preview, review, node.to]);
 
   const onMove = useCallback(
