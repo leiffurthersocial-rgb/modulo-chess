@@ -1,6 +1,7 @@
 "use client";
 
-import { Monitor, Moon, RotateCcw, Sun, Volume2 } from "lucide-react";
+import { Keyboard, Monitor, Moon, RotateCcw, Sun, Volume2 } from "lucide-react";
+import { OPEN_SHORTCUTS_EVENT } from "@/components/shell/events";
 import { STOCKFISH_VERSION } from "@/core/engine/assets";
 import { playSound } from "@/core/sound/sounds";
 import { Button, Section, Segmented, Slider, Switch, cx } from "@/components/ui/primitives";
@@ -203,6 +204,15 @@ export function SettingsPanel() {
           onChange={(v) => s.set({ reviewDepth: v })}
         />
         <p className="text-faint text-xs">Threads, hash, lines and depth limit are in the Engine panel.</p>
+      </Section>
+
+      <Section title="Keyboard">
+        <p className="text-muted mb-3 text-sm">
+          Arrow keys step through moves, F flips the board, E toggles the engine.
+        </p>
+        <Button size="sm" onClick={() => window.dispatchEvent(new Event(OPEN_SHORTCUTS_EVENT))}>
+          <Keyboard className="size-4" aria-hidden /> All shortcuts
+        </Button>
       </Section>
 
       <Section title="About & licences">

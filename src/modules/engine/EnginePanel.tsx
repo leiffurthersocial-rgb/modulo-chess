@@ -52,7 +52,7 @@ export function EnginePanel() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="bg-surface-2/70 ring-border flex items-center gap-3 rounded-2xl p-4 ring-1">
+      <div className="bg-surface-2 flex items-center gap-3 rounded-xl p-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-3">
             <span
@@ -102,18 +102,13 @@ export function EnginePanel() {
             onClick={() => setEnabled(!enabled)}
             disabled={mode === "play"}
             className={cx(
-              "flex h-9 items-center gap-2 rounded-xl px-3.5 text-sm font-medium transition-colors duration-[var(--dur-fast)] disabled:opacity-40",
-              enabled
-                ? "bg-accent text-accent-ink hover:bg-accent-strong"
-                : "bg-surface-3 text-text ring-border-strong hover:bg-surface-hover ring-1",
+              "press font-display flex h-11 items-center gap-2 rounded-xl px-4 text-[15px] font-bold disabled:opacity-40",
+              enabled ? "bg-surface-3 text-text" : "press-accent bg-accent text-accent-ink",
             )}
           >
             {enabled ? (
               <>
-                <span
-                  className={cx("bg-accent-ink size-2 rounded-full", searching && "pulse-dot")}
-                  aria-hidden
-                />
+                <span className={cx("bg-accent size-2 rounded-full", searching && "pulse-dot")} aria-hidden />
                 Stop
               </>
             ) : (

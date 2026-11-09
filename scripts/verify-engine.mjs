@@ -54,7 +54,7 @@ async function main() {
   const page = await ctx.newPage();
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  await page.goto(`${BASE}/engine`);
+  await page.goto(`${BASE}/analysis`);
   await page.waitForLoadState("networkidle");
   const isolated = await page.evaluate(() => crossOriginIsolated && typeof SharedArrayBuffer !== "undefined");
   check("Page is cross-origin isolated (SharedArrayBuffer available)", isolated);
@@ -135,7 +135,7 @@ async function main() {
     "PGN with variations loaded into the move list",
     /Bc5/.test(variationShown ?? "") && /Nf3#/.test(variationShown ?? ""),
   );
-  await page.getByRole("link", { name: "Review" }).first().click();
+  await page.getByRole("tab", { name: "Review" }).first().click();
   await page
     .getByRole("button", { name: /Review game/ })
     .filter({ visible: true })
@@ -159,8 +159,9 @@ async function main() {
   // ── 3. Play vs Stockfish ────────────────────────────────────────────────
   await page.goto(`${BASE}/`);
   await page.waitForLoadState("networkidle");
+  await page.getByRole("button", { name: /^400/ }).filter({ visible: true }).click(); // lowest preset: exercises the weakened (sub-1320) engine
   await page
-    .getByRole("button", { name: /Start game/ })
+    .getByRole("button", { name: /^Play$/ })
     .filter({ visible: true })
     .click();
   // Drag and drop (pointer events) for the user's move.
@@ -176,12 +177,12 @@ async function main() {
     null,
     { timeout: 20000 },
   );
-  check("Drag-and-drop move accepted and Stockfish opponent replies", true);
+  check("Drag-and-drop move accepted and a 400-Elo Stockfish replies", true);
   await page.screenshot({ path: `${SHOTS}/desktop-play.png` });
 
   // ── 3b. Keyboard-only move on the board ────────────────────────────────
   await page
-    .getByRole("button", { name: /Back to analysis board|Resign/ })
+    .getByRole("button", { name: /Abort game/ })
     .filter({ visible: true })
     .first()
     .click()
@@ -197,6 +198,21 @@ async function main() {
   check("Keyboard-only move (arrow keys + Enter)", /e4/.test(kb ?? ""), (kb ?? "").slice(0, 20));
   await ctx.close();
 
+  // ── 3c. Quick Elo estimate: start, resign, get a rating ───────────────
+  {
+    const c = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const pe = await c.newPage();
+    await pe.goto(`${BASE}/elo`);
+    await pe.waitForLoadState("networkidle");
+    await pe.getByRole("button", { name: "Start" }).first().click();
+    await pe.getByRole("button", { name: /Resign/ }).click();
+    await pe.waitForSelector("text=Estimated rating", { timeout: 60000 });
+    const card = (await pe.locator("aside").textContent()) ?? "";
+    const m = /Estimated rating\s*(\d+)/.exec(card);
+    check("Quick Elo estimate produces a rating", Boolean(m), m ? `≈${m[1]}` : card.slice(0, 80));
+    await c.close();
+  }
+
   // ── 4. Single-threaded fallback without cross-origin isolation ─────────
   const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 860 } });
   const p2 = await ctx2.newPage();
@@ -209,7 +225,7 @@ async function main() {
     delete headers["cross-origin-opener-policy"];
     return route.fulfill({ response: res, headers });
   });
-  await p2.goto(`${BASE}/engine`);
+  await p2.goto(`${BASE}/analysis`);
   await p2.waitForLoadState("networkidle");
   const iso2 = await p2.evaluate(() => crossOriginIsolated);
   await p2

@@ -8,7 +8,8 @@ export const importExportModule: ModuleManifest = {
   description: "Load PGN or FEN, and export your analysis with variations.",
   icon: ArrowDownUp,
   route: "/import",
-  order: 40,
+  group: "analysis",
+  order: 50,
   panel: ImportExportPanel,
   shortcut: "i",
 };

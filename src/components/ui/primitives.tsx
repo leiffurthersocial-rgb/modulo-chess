@@ -20,16 +20,13 @@ export function Button({
     <button
       type="button"
       className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-xl font-medium whitespace-nowrap select-none",
-        "transition-[background-color,color,box-shadow,transform] duration-[var(--dur-fast)] ease-[var(--ease-out)]",
-        "active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45",
-        size === "sm" ? "h-8 px-3 text-[13px]" : "h-10 px-4 text-sm",
-        variant === "primary" &&
-          "bg-accent text-accent-ink hover:bg-accent-strong shadow-[0_8px_24px_-12px_var(--accent)]",
-        variant === "secondary" &&
-          "bg-surface-3 text-text ring-border-strong/60 hover:bg-surface-hover ring-1",
-        variant === "ghost" && "text-muted hover:bg-surface-3 hover:text-text",
-        variant === "danger" && "bg-danger/12 text-danger ring-danger/30 hover:bg-danger/20 ring-1",
+        "font-display inline-flex items-center justify-center gap-2 rounded-xl font-bold whitespace-nowrap select-none",
+        "disabled:pointer-events-none disabled:opacity-45",
+        size === "sm" ? "h-9 px-3.5 text-[14px]" : "h-11 px-4 text-[15px]",
+        variant === "primary" && "press press-accent bg-accent text-accent-ink",
+        variant === "secondary" && "press bg-surface-3 text-text",
+        variant === "ghost" && "text-muted hover:bg-surface-3 hover:text-text transition-colors",
+        variant === "danger" && "press press-danger bg-danger text-white",
         className,
       )}
       {...rest}
@@ -169,7 +166,7 @@ export function Segmented<T extends string>({
   size?: "sm" | "md";
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="bg-surface-2 ring-border flex rounded-xl p-1 ring-1">
+    <div role="radiogroup" aria-label={label} className="bg-surface-2 flex gap-1 rounded-xl p-1 pb-1.5">
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -181,11 +178,9 @@ export function Segmented<T extends string>({
             title={o.title}
             onClick={() => onChange(o.value)}
             className={cx(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-lg font-medium transition-[background-color,color] duration-[var(--dur-fast)]",
-              size === "sm" ? "h-7 px-2 text-xs" : "h-8 px-3 text-[13px]",
-              active
-                ? "bg-surface-3 text-text ring-border-strong shadow-sm ring-1"
-                : "text-muted hover:text-text",
+              "press font-display flex flex-1 items-center justify-center gap-1.5 rounded-lg font-bold",
+              size === "sm" ? "h-8 px-2 text-[13px]" : "h-9 px-3 text-[14px]",
+              active ? "bg-accent press-accent text-white" : "bg-surface-3 text-faint hover:text-text",
             )}
           >
             {o.label}
@@ -208,11 +203,13 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section className={cx("bg-surface-2/70 ring-border rounded-2xl p-4 ring-1", className)}>
+    <section className={cx("bg-surface-2 rounded-xl p-3.5", className)}>
       {title || action ? (
         <header className="mb-3 flex items-center justify-between gap-2">
           {title ? (
-            <h3 className="text-faint text-xs font-semibold tracking-[0.08em] uppercase">{title}</h3>
+            <h3 className="font-display text-faint text-[13px] font-extrabold tracking-wide uppercase">
+              {title}
+            </h3>
           ) : (
             <span />
           )}

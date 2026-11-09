@@ -44,7 +44,9 @@ export function OpeningsPanel() {
         ) : data.opening ? (
           <div className="animate-in" key={data.opening.name}>
             <p className="text-accent font-mono text-xs font-semibold">{data.opening.eco}</p>
-            <p className="font-display text-text mt-1 text-2xl leading-tight">{data.opening.name}</p>
+            <p className="font-display text-text mt-1 text-2xl leading-tight font-black">
+              {data.opening.name}
+            </p>
             {data.opening.nodeId && data.opening.nodeId !== node.id ? (
               <p className="text-faint mt-1 text-xs">Out of book — last named position shown.</p>
             ) : null}
@@ -85,7 +87,7 @@ export function OpeningsPanel() {
         )}
       </Section>
 
-      <div className="text-faint ring-border ring-dashed flex items-start gap-3 rounded-2xl p-3 text-xs leading-relaxed ring-1">
+      <div className="text-faint bg-surface-2 flex items-start gap-3 rounded-xl p-3 text-xs leading-relaxed">
         <Database className="mt-0.5 size-4 shrink-0" aria-hidden />
         <p>
           Source: <b className="text-muted">{localEcoProvider.name}</b> — 3,800+ named lines from the CC0

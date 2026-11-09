@@ -1,157 +1,149 @@
 "use client";
 
-import { Flag, Microscope, RotateCcw, Shuffle, Swords, Undo2 } from "lucide-react";
-import { useState } from "react";
+import { Flag, Gauge, Microscope, Shuffle, Swords, Undo2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { ELO_PRESETS, MAX_ELO, MIN_ELO, NATIVE_MIN_ELO, strengthName } from "@/core/engine/strength";
 import { playSound } from "@/core/sound/sounds";
 import { Button, Section, Segmented, Slider, Switch, cx } from "@/components/ui/primitives";
 import { useCurrentStatus } from "@/hooks/useGameSelectors";
-import { useGame, type Strength } from "@/stores/game";
+import { useElo } from "@/stores/elo";
+import { useGame } from "@/stores/game";
 import { useSettings } from "@/stores/settings";
-import { strengthLabel } from "./PlayController";
 
 type ColorChoice = "w" | "b" | "random";
 
-/** Rough human-readable descriptions of Stockfish's Skill Level. */
-function skillHint(level: number): string {
-  if (level <= 2) return "Beginner — makes frequent mistakes";
-  if (level <= 6) return "Casual club player";
-  if (level <= 10) return "Strong club player";
-  if (level <= 15) return "Expert / master strength";
-  if (level < 20) return "Grandmaster strength";
-  return "Full strength";
-}
-
 export function BoardPanel() {
   const mode = useGame((s) => s.mode);
+  const eloActive = useElo((s) => s.status === "playing" || s.status === "evaluating");
+  if (mode === "play" && eloActive) return <EloInProgress />;
   return mode === "play" ? <PlayingPanel /> : <SetupPanel />;
+}
+
+function EloInProgress() {
+  const router = useRouter();
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="bg-surface-3 rounded-xl p-4">
+        <p className="font-display text-text text-xl font-extrabold">Elo estimate in progress</p>
+        <p className="text-muted mt-1 text-sm">
+          This game counts towards your estimate. Its controls are on the Elo page.
+        </p>
+      </div>
+      <Button variant="primary" className="w-full" onClick={() => router.push("/elo")}>
+        <Gauge className="size-4" aria-hidden /> Go to Elo estimate
+      </Button>
+    </div>
+  );
 }
 
 function SetupPanel() {
   const play = useGame((s) => s.play);
   const startPlay = useGame((s) => s.startPlay);
-  const newGame = useGame((s) => s.newGame);
-  const hasMoves = useGame((s) => s.tree.nodes[s.tree.rootId].children.length > 0);
-  const isStart = useGame((s) => s.tree.nodes[s.currentId].ply === 0 && s.currentId === s.tree.rootId);
+  const isStart = useGame((s) => s.currentId === s.tree.rootId);
   const status = useCurrentStatus();
   const [color, setColor] = useState<ColorChoice>(play.userColor);
-  const [strength, setStrength] = useState<Strength>(play.strength);
+  const [elo, setElo] = useState<number>(play.strength.elo);
   const [fromCurrent, setFromCurrent] = useState(false);
   const sound = useSettings((s) => s.sound);
   const volume = useSettings((s) => s.volume);
 
   const start = () => {
     const userColor = color === "random" ? (Math.random() < 0.5 ? "w" : "b") : color;
-    startPlay({ userColor, strength }, fromCurrent && !isStart);
+    startPlay({ userColor, strength: { elo } }, { fromCurrent: fromCurrent && !isStart });
     if (sound) playSound("start", volume);
   };
 
   return (
     <div className="flex flex-col gap-3">
-      <Section title="Analysis board">
-        <p className="text-muted text-sm leading-relaxed">
-          Move pieces for both sides freely — every new move from an earlier position becomes a variation.
-          Turn on the engine below the board to analyse.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => newGame()} disabled={!hasMoves}>
-            <RotateCcw className="size-3.5" aria-hidden /> Reset board
-          </Button>
+      <Section title="Opponent strength">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="tabular font-display text-text text-[40px] leading-none font-black">{elo}</p>
+            <p className="font-display text-accent mt-1 text-sm font-bold">{strengthName(elo)}</p>
+          </div>
+          <p className="text-faint max-w-[55%] text-right text-[11px] leading-snug">
+            {elo < NATIVE_MIN_ELO
+              ? "Below 1320 Stockfish is weakened with a shallower search and human-like mistakes."
+              : "Uses Stockfish’s built-in UCI_Elo strength limit."}
+          </p>
+        </div>
+        <Slider label="Elo" value={elo} min={MIN_ELO} max={MAX_ELO} step={10} onChange={setElo} />
+        <div className="mt-1 grid grid-cols-4 gap-1.5 sm:grid-cols-7">
+          {ELO_PRESETS.map((p) => (
+            <button
+              key={p.elo}
+              type="button"
+              onClick={() => setElo(p.elo)}
+              aria-pressed={elo === p.elo}
+              className={cx(
+                "press font-display flex flex-col items-center rounded-lg px-1 py-1.5",
+                elo === p.elo
+                  ? "press-accent bg-accent text-white"
+                  : "bg-surface-3 text-muted hover:text-text",
+              )}
+            >
+              <span className="text-[13px] font-extrabold">{p.elo}</span>
+              <span className="text-[10px] font-bold opacity-80">{p.label}</span>
+            </button>
+          ))}
         </div>
       </Section>
 
-      <Section title="Play vs Stockfish">
-        <div className="flex flex-col gap-4">
-          <div>
-            <p className="text-text mb-1.5 text-sm">Play as</p>
-            <Segmented<ColorChoice>
-              label="Your colour"
-              value={color}
-              onChange={setColor}
-              options={[
-                {
-                  value: "w",
-                  label: (
-                    <>
-                      <span className="ring-border-strong size-2.5 rounded-sm bg-[var(--eval-white)] ring-1" />
-                      White
-                    </>
-                  ),
-                },
-                {
-                  value: "random",
-                  label: (
-                    <>
-                      <Shuffle className="size-3.5" aria-hidden />
-                      Random
-                    </>
-                  ),
-                },
-                {
-                  value: "b",
-                  label: (
-                    <>
-                      <span className="ring-border-strong size-2.5 rounded-sm bg-[var(--eval-black)] ring-1" />
-                      Black
-                    </>
-                  ),
-                },
-              ]}
-            />
-          </div>
-          <div>
-            <p className="text-text mb-1.5 text-sm">Strength</p>
-            <Segmented<"skill" | "elo">
-              label="Strength mode"
-              size="sm"
-              value={strength.kind}
-              onChange={(k) =>
-                setStrength(k === "elo" ? { kind: "elo", elo: 1500 } : { kind: "skill", level: 8 })
-              }
-              options={[
-                { value: "skill", label: "Skill level" },
-                { value: "elo", label: "Elo" },
-              ]}
-            />
-            {strength.kind === "skill" ? (
-              <Slider
-                label="Skill level"
-                value={strength.level}
-                min={0}
-                max={20}
-                onChange={(level) => setStrength({ kind: "skill", level })}
-                description={skillHint(strength.level)}
-              />
-            ) : (
-              <Slider
-                label="Target Elo"
-                value={strength.elo}
-                min={1320}
-                max={3190}
-                step={10}
-                onChange={(elo) => setStrength({ kind: "elo", elo })}
-                description="Uses UCI_LimitStrength. Stockfish’s Elo scale is calibrated against engines at long time controls."
-              />
-            )}
-          </div>
-          <Switch
-            checked={fromCurrent && !isStart}
-            onChange={setFromCurrent}
-            disabled={isStart || status.kind !== "playing"}
-            label="Start from current position"
-            description={
-              isStart ? "Navigate to a position to enable" : "Continue the game from the board as shown"
-            }
-          />
-          <Button
-            variant="primary"
-            onClick={start}
-            disabled={fromCurrent && !isStart && status.kind !== "playing"}
-          >
-            <Swords className="size-4" aria-hidden /> Start game
-          </Button>
-        </div>
+      <Section title="Your colour">
+        <Segmented<ColorChoice>
+          label="Your colour"
+          value={color}
+          onChange={setColor}
+          options={[
+            {
+              value: "w",
+              label: (
+                <>
+                  <span className="ring-border-strong size-3 rounded-sm bg-[var(--eval-white)] ring-1" />
+                  White
+                </>
+              ),
+            },
+            {
+              value: "random",
+              label: (
+                <>
+                  <Shuffle className="size-3.5" aria-hidden />
+                  Random
+                </>
+              ),
+            },
+            {
+              value: "b",
+              label: (
+                <>
+                  <span className="ring-border-strong size-3 rounded-sm bg-[var(--eval-black)] ring-1" />
+                  Black
+                </>
+              ),
+            },
+          ]}
+        />
+        <Switch
+          checked={fromCurrent && !isStart}
+          onChange={setFromCurrent}
+          disabled={isStart || status.kind !== "playing"}
+          label="Start from the current position"
+          description={isStart ? "Set up a position in Analysis first" : "Continue from the board as shown"}
+        />
       </Section>
+
+      <Button variant="primary" onClick={start} className="w-full">
+        <Swords className="size-5" aria-hidden /> Play
+      </Button>
+      <p className="text-faint text-center text-xs">
+        Want to know your level?{" "}
+        <Link href="/elo" className="text-accent font-semibold hover:underline">
+          Estimate your Elo
+        </Link>
+      </p>
     </div>
   );
 }
@@ -170,25 +162,18 @@ function PlayingPanel() {
   return (
     <div className="flex flex-col gap-3">
       <div
-        className={cx(
-          "animate-in rounded-2xl p-4 ring-1",
-          over
-            ? youWon
-              ? "bg-accent-soft ring-accent/40"
-              : "bg-surface-2/70 ring-border"
-            : "bg-surface-2/70 ring-border",
-        )}
+        className={cx("animate-in rounded-xl p-4", over && youWon ? "bg-accent text-white" : "bg-surface-3")}
         aria-live="polite"
       >
-        <p className="text-faint text-xs font-semibold tracking-[0.08em] uppercase">
-          vs Stockfish · {strengthLabel(play.strength)}
+        <p className={cx("font-display text-sm font-bold", over && youWon ? "opacity-90" : "text-faint")}>
+          vs Stockfish · {play.strength.elo} ({strengthName(play.strength.elo)})
         </p>
-        <p className="font-display text-text mt-2 text-[28px] leading-tight">
+        <p className="font-display mt-1 text-[28px] leading-tight font-black">
           {over
             ? result === "1/2-1/2"
               ? "Draw"
               : youWon
-                ? "You won"
+                ? "You won!"
                 : "Stockfish won"
             : thinking
               ? "Stockfish is thinking…"
@@ -196,41 +181,39 @@ function PlayingPanel() {
                 ? "Your move"
                 : "Waiting…"}
         </p>
-        <p className="text-muted mt-1 text-sm">
+        <p className={cx("mt-0.5 text-sm", over && youWon ? "opacity-90" : "text-muted")}>
           {over
-            ? `${result} · ${status.kind === "playing" ? "Resignation" : status.text}`
-            : `You play ${play.userColor === "w" ? "White" : "Black"}.`}
+            ? `${result} · ${status.kind === "playing" ? "by resignation" : status.text}`
+            : `You play ${play.userColor === "w" ? "White" : "Black"}`}
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        {!over ? (
-          <>
-            <Button onClick={takeback} disabled={!canTakeback || thinking}>
-              <Undo2 className="size-4" aria-hidden /> Takeback
-            </Button>
-            <Button variant="danger" onClick={() => setResult(play.userColor === "w" ? "0-1" : "1-0")}>
-              <Flag className="size-4" aria-hidden /> Resign
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="primary" onClick={() => startPlay(play, false)}>
-              <Swords className="size-4" aria-hidden /> Rematch
-            </Button>
-            <Button
-              onClick={() => {
-                stopPlay();
-                router.push("/review");
-              }}
-            >
-              <Microscope className="size-4" aria-hidden /> Review game
-            </Button>
-          </>
-        )}
-      </div>
+      {!over ? (
+        <div className="grid grid-cols-2 gap-2">
+          <Button onClick={takeback} disabled={!canTakeback || thinking}>
+            <Undo2 className="size-4" aria-hidden /> Takeback
+          </Button>
+          <Button variant="danger" onClick={() => setResult(play.userColor === "w" ? "0-1" : "1-0")}>
+            <Flag className="size-4" aria-hidden /> Resign
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="primary" onClick={() => startPlay(play)}>
+            <Swords className="size-4" aria-hidden /> Rematch
+          </Button>
+          <Button
+            onClick={() => {
+              stopPlay();
+              router.push("/review");
+            }}
+          >
+            <Microscope className="size-4" aria-hidden /> Review
+          </Button>
+        </div>
+      )}
       <Button variant="ghost" onClick={stopPlay}>
-        Back to analysis board
+        {over ? "New game settings" : "Abort game"}
       </Button>
     </div>
   );

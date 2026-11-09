@@ -33,7 +33,7 @@ export function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () 
       aria-label="Keyboard shortcuts"
     >
       <div className="border-border flex items-center justify-between border-b px-5 py-4">
-        <h2 className="font-display text-xl">Keyboard shortcuts</h2>
+        <h2 className="font-display text-xl font-black">Keyboard shortcuts</h2>
         <button type="button" onClick={onClose} aria-label="Close" className="text-faint hover:text-text">
           <X className="size-4" />
         </button>

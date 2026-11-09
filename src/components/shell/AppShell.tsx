@@ -1,21 +1,21 @@
 "use client";
 
-import { Keyboard, ListTree, Moon, Sun } from "lucide-react";
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, ListTree } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { ModuleManifest } from "@/core/modules/types";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { ModuleManifest, ResolvedNavGroup } from "@/core/modules/types";
 import { registry } from "@/modules/registry";
-import { useCurrentPath } from "@/hooks/useGameSelectors";
-import { DESKTOP_QUERY, useMediaQuery } from "@/hooks/useMediaQuery";
-import { useEngine } from "@/stores/engine";
-import { useOpeningDb } from "@/stores/openings";
-import { useSettings } from "@/stores/settings";
 import { identifyOpening } from "@/modules/openings/lookup";
-import { IconButton, cx } from "@/components/ui/primitives";
+import { cx } from "@/components/ui/primitives";
+import { useCurrentPath } from "@/hooks/useGameSelectors";
+import { useEngine } from "@/stores/engine";
+import { useGame } from "@/stores/game";
+import { useOpeningDb } from "@/stores/openings";
 import { BoardArea } from "./BoardArea";
+import { OPEN_SHORTCUTS_EVENT } from "./events";
 import { LogoMark, Wordmark } from "./Logo";
-import { MoveList, MoveStrip } from "./MoveList";
+import { MoveList } from "./MoveList";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { Toasts } from "./Toasts";
 
@@ -51,8 +51,13 @@ function useGlobalShortcuts(openHelp: () => void) {
         router.push(m.route!);
       }
     };
+    const onOpen = () => openHelp();
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener(OPEN_SHORTCUTS_EVENT, onOpen);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(OPEN_SHORTCUTS_EVENT, onOpen);
+    };
   }, [router, openHelp]);
 }
 
@@ -67,6 +72,82 @@ function Controllers() {
   );
 }
 
+// ── Top navigation ────────────────────────────────────────────────────────
+
+function TopBar({ activeGroup }: { activeGroup: ResolvedNavGroup }) {
+  return (
+    <header className="bg-nav sticky top-0 z-40 shadow-[0_1px_0_var(--border)]">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-2 px-2 sm:gap-6 sm:px-6">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2.5 rounded-xl"
+          aria-label="Modulo: Chess home"
+        >
+          <LogoMark className="size-9" />
+          <Wordmark className="hidden md:inline" />
+        </Link>
+        <nav
+          aria-label="Main"
+          className="flex min-w-0 flex-1 items-center justify-around gap-1 sm:justify-start"
+        >
+          {registry.groups().map((g) => {
+            const active = g.id === activeGroup.id;
+            const Icon = g.icon;
+            return (
+              <Link
+                key={g.id}
+                href={g.route}
+                aria-current={active ? "page" : undefined}
+                className={cx(
+                  "font-display flex flex-col items-center gap-0.5 rounded-xl px-2.5 py-1.5 font-bold transition-colors duration-[var(--dur-fast)] sm:flex-row sm:gap-2 sm:px-3.5 sm:py-2",
+                  active ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-3 hover:text-text",
+                )}
+              >
+                <Icon className="size-5" aria-hidden />
+                <span className="text-[11px] sm:text-[15px]">{g.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+// ── Panel ─────────────────────────────────────────────────────────────────
+
+function GroupTabs({ group, active }: { group: ResolvedNavGroup; active: ModuleManifest }) {
+  if (group.modules.length < 2) return null;
+  return (
+    <div
+      role="tablist"
+      aria-label={`${group.label} tools`}
+      className="bg-surface-2 flex gap-1.5 rounded-xl p-1.5 pb-2"
+    >
+      {group.modules.map((m) => {
+        const isActive = m.id === active.id;
+        const Icon = m.icon;
+        return (
+          <Link
+            key={m.id}
+            href={m.route!}
+            role="tab"
+            aria-selected={isActive}
+            title={`${m.name}${m.shortcut ? ` (${m.shortcut.toUpperCase()})` : ""}`}
+            className={cx(
+              "press font-display flex h-10 min-w-0 flex-auto items-center justify-center gap-1.5 rounded-lg px-2.5 text-[14px] font-bold",
+              isActive ? "press-accent bg-accent text-white" : "bg-surface-3 text-faint hover:text-text",
+            )}
+          >
+            <Icon className="size-4 shrink-0" aria-hidden />
+            <span className={cx("truncate", !isActive && "sr-only sm:not-sr-only")}>{m.name}</span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
 function OpeningLabel() {
   const path = useCurrentPath();
   const db = useOpeningDb((s) => s.db);
@@ -75,8 +156,7 @@ function OpeningLabel() {
     void load();
   }, [load]);
   const opening = useMemo(() => (db ? identifyOpening(db, path) : null), [db, path]);
-  if (!opening)
-    return <span className="text-faint truncate text-xs">{path.length > 1 ? "" : "Starting position"}</span>;
+  if (!opening) return null;
   return (
     <span className="text-muted min-w-0 truncate text-xs" title={`${opening.eco} ${opening.name}`}>
       <span className="text-faint font-mono">{opening.eco}</span> {opening.name}
@@ -84,343 +164,148 @@ function OpeningLabel() {
   );
 }
 
-function ThemeToggle() {
-  const theme = useSettings((s) => s.theme);
-  const set = useSettings((s) => s.set);
-  const [dark, setDark] = useState(true);
-  useEffect(() => {
-    const read = () => setDark(document.documentElement.dataset.theme !== "light");
-    read();
-    const obs = new MutationObserver(read);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => obs.disconnect();
-  }, [theme]);
+/** First / previous / next / last / flip. The only place move navigation lives. */
+function Traverser({ className }: { className?: string }) {
+  const { first, prev, next, last, flip } = useGame.getState();
+  const hasPrev = useGame((g) => g.tree.nodes[g.currentId].parentId !== null);
+  const hasNext = useGame((g) => g.tree.nodes[g.currentId].children.length > 0);
+  const btn =
+    "press grid h-11 flex-1 place-items-center rounded-xl bg-surface-3 text-text disabled:opacity-40 disabled:pointer-events-none";
   return (
-    <IconButton
-      label={dark ? "Switch to light theme" : "Switch to dark theme"}
-      onClick={() => set({ theme: dark ? "light" : "dark" })}
-    >
-      {dark ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
-    </IconButton>
-  );
-}
-
-function Sidebar({ active, onHelp }: { active: ModuleManifest; onHelp: () => void }) {
-  return (
-    <nav
-      aria-label="Modules"
-      className="border-border bg-surface/40 hidden w-[84px] shrink-0 flex-col items-center border-r py-4 lg:flex"
-    >
-      <Link href="/" className="mb-6 rounded-xl" aria-label="Modulo: Chess home">
-        <LogoMark className="size-10" />
-      </Link>
-      <ul className="flex flex-1 flex-col items-center gap-1.5">
-        {registry
-          .routed()
-          .filter((m) => !m.hidden)
-          .map((m) => {
-            const isActive = m.id === active.id;
-            const Icon = m.icon;
-            return (
-              <li key={m.id}>
-                <Link
-                  href={m.route!}
-                  aria-current={isActive ? "page" : undefined}
-                  title={`${m.name}${m.shortcut ? ` (${m.shortcut.toUpperCase()})` : ""}`}
-                  className={cx(
-                    "group relative flex w-[68px] flex-col items-center gap-1 rounded-2xl py-2.5 text-[11px] font-medium transition-colors duration-[var(--dur-fast)]",
-                    isActive ? "text-text" : "text-faint hover:bg-surface-3/60 hover:text-text",
-                  )}
-                >
-                  <span
-                    className={cx(
-                      "grid size-9 place-items-center rounded-xl transition-colors duration-[var(--dur)]",
-                      isActive ? "bg-accent text-accent-ink" : "",
-                    )}
-                  >
-                    <Icon className="size-[18px]" aria-hidden strokeWidth={isActive ? 2.25 : 2} />
-                  </span>
-                  {m.name}
-                </Link>
-              </li>
-            );
-          })}
-      </ul>
-      <div className="flex flex-col items-center gap-1">
-        <IconButton label="Keyboard shortcuts (?)" onClick={onHelp}>
-          <Keyboard className="size-[18px]" />
-        </IconButton>
-        <ThemeToggle />
-      </div>
-    </nav>
-  );
-}
-
-function PanelTabs({ active, onSelect }: { active: ModuleManifest; onSelect?: () => void }) {
-  return (
-    <div role="tablist" aria-label="Panels" className="scroll-thin flex gap-1 overflow-x-auto">
-      {registry
-        .routed()
-        .filter((m) => m.panel && !m.hidden)
-        .map((m) => {
-          const isActive = m.id === active.id;
-          const Icon = m.icon;
-          return (
-            <Link
-              key={m.id}
-              href={m.route!}
-              role="tab"
-              aria-selected={isActive}
-              title={`${m.name}${m.shortcut ? ` (${m.shortcut.toUpperCase()})` : ""}`}
-              onClick={onSelect}
-              className={cx(
-                "flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-[13px] font-medium transition-colors duration-[var(--dur-fast)]",
-                isActive ? "bg-surface-3 text-text ring-border-strong ring-1" : "text-faint hover:text-text",
-              )}
-            >
-              <Icon className="size-4" aria-hidden />
-              <span className={isActive ? "" : "sr-only"}>{m.name}</span>
-            </Link>
-          );
-        })}
+    <div role="toolbar" aria-label="Move navigation" className={cx("flex gap-1.5", className)}>
+      <button
+        type="button"
+        className={btn}
+        onClick={first}
+        disabled={!hasPrev}
+        aria-label="First move"
+        title="First move (↑)"
+      >
+        <ChevronFirst className="size-5" />
+      </button>
+      <button
+        type="button"
+        className={btn}
+        onClick={prev}
+        disabled={!hasPrev}
+        aria-label="Previous move"
+        title="Previous move (←)"
+      >
+        <ChevronLeft className="size-5" />
+      </button>
+      <button
+        type="button"
+        className={btn}
+        onClick={next}
+        disabled={!hasNext}
+        aria-label="Next move"
+        title="Next move (→)"
+      >
+        <ChevronRight className="size-5" />
+      </button>
+      <button
+        type="button"
+        className={btn}
+        onClick={last}
+        disabled={!hasNext}
+        aria-label="Last move"
+        title="Last move (↓)"
+      >
+        <ChevronLast className="size-5" />
+      </button>
+      <button type="button" className={btn} onClick={flip} aria-label="Flip board" title="Flip board (F)">
+        <FlipVertical2 className="size-5" />
+      </button>
     </div>
   );
 }
 
-function PanelBody({ module }: { module: ModuleManifest }) {
-  const Panel = module.panel;
+/** Move list section; collapses to a single line until the first move is played. */
+function MovesSection() {
+  const hasMoves = useGame((g) => g.tree.nodes[g.tree.rootId].children.length > 0);
   return (
-    <div key={module.id} role="tabpanel" aria-label={module.name} className="animate-in">
-      {Panel ? <Panel /> : null}
-    </div>
-  );
-}
-
-function DesktopPanel({ active }: { active: ModuleManifest }) {
-  return (
-    <aside
-      className="border-border bg-surface/50 hidden w-[400px] shrink-0 flex-col border-l lg:flex xl:w-[440px]"
-      aria-label="Analysis panel"
+    <div
+      className={cx(
+        "border-border bg-surface-2 flex flex-col border-t",
+        hasMoves && "lg:h-[34%] lg:min-h-[190px]",
+      )}
     >
-      <div className="border-border border-b px-3 py-3">
-        <PanelTabs active={active} />
+      <div className="flex h-10 shrink-0 items-center gap-2 px-3">
+        <ListTree className="text-faint size-4 shrink-0" aria-hidden />
+        <span className="font-display text-faint text-[13px] font-extrabold tracking-wide uppercase">
+          Moves
+        </span>
+        <span className="bg-border-strong mx-1 h-3 w-px" aria-hidden />
+        {hasMoves ? <OpeningLabel /> : <span className="text-faint text-xs">No moves yet</span>}
       </div>
-      <div className="scroll-thin min-h-0 flex-1 overflow-y-auto p-4">
-        <PanelBody module={active} />
-      </div>
-      <div className="border-border flex h-[38%] min-h-[200px] flex-col border-t">
-        <div className="border-border flex h-10 shrink-0 items-center gap-2 border-b px-4">
-          <ListTree className="text-faint size-4 shrink-0" aria-hidden />
-          <span className="text-faint text-xs font-semibold tracking-[0.08em] uppercase">Moves</span>
-          <span className="bg-border mx-1 h-3 w-px" aria-hidden />
-          <OpeningLabel />
-        </div>
-        <div className="min-h-0 flex-1">
+      {hasMoves ? (
+        <div className="max-h-[260px] min-h-0 flex-1 lg:max-h-none">
           <MoveList />
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Panel({ module, group }: { module: ModuleManifest; group: ResolvedNavGroup }) {
+  const Body = module.panel;
+  return (
+    <aside
+      aria-label={`${group.label} panel`}
+      className="bg-surface flex w-full flex-col overflow-hidden rounded-2xl shadow-[var(--shadow)] lg:sticky lg:top-[88px] lg:h-[calc(100dvh-112px)] lg:w-[420px] lg:shrink-0"
+    >
+      <div className="flex flex-col gap-3 p-3 pb-0">
+        <h2 className="bg-accent font-display rounded-xl px-4 py-2 text-center text-[26px] leading-tight font-black text-white shadow-[0_4px_0_var(--accent-shadow)]">
+          {group.modules.length > 1 ? group.label : module.name}
+        </h2>
+        <GroupTabs group={group} active={module} />
+      </div>
+
+      <div className="scroll-thin min-h-0 flex-1 p-3 lg:overflow-y-auto">
+        <div key={module.id} role="tabpanel" aria-label={module.name} className="animate-in">
+          {Body ? <Body /> : null}
+        </div>
+      </div>
+
+      {group.showMoves ? <MovesSection /> : null}
+
+      {/* Desktop: navigation sits at the bottom of the panel. Mobile: pinned to the screen bottom. */}
+      <div className="border-border bg-surface hidden border-t p-2.5 lg:block">
+        <Traverser />
       </div>
     </aside>
   );
 }
 
-type Snap = "peek" | "half" | "full";
-const SNAP_HEIGHT: Record<Snap, string> = {
-  peek: "var(--sheet-peek)",
-  half: "62dvh",
-  full: "calc(100dvh - 56px)",
-};
-
-function MobileSheet({ active }: { active: ModuleManifest }) {
-  const [snap, setSnap] = useState<Snap>("peek");
-  const [view, setView] = useState<"panel" | "moves">("panel");
-  const [drag, setDrag] = useState<{ y: number; h: number; dy: number } | null>(null);
-  const sheet = useRef<HTMLDivElement>(null);
-
-  const order: Snap[] = ["peek", "half", "full"];
-  const cycle = () => setSnap((s) => order[(order.indexOf(s) + 1) % order.length]);
-
-  const onDown = (e: React.PointerEvent) => {
-    setDrag({ y: e.clientY, h: sheet.current?.getBoundingClientRect().height ?? 0, dy: 0 });
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  };
-  const onMove = (e: React.PointerEvent) => {
-    if (drag) setDrag({ ...drag, dy: e.clientY - drag.y });
-  };
-  const onUp = (e: React.PointerEvent) => {
-    const s = drag;
-    setDrag(null);
-    if (!s) return;
-    const dy = e.clientY - s.y;
-    if (Math.abs(dy) < 6) {
-      cycle();
-      return;
-    }
-    const h = s.h - dy;
-    const vh = window.innerHeight;
-    const targets: [Snap, number][] = [
-      ["peek", Math.max(200, vh * 0.3)],
-      ["half", vh * 0.62],
-      ["full", vh - 56],
-    ];
-    targets.sort((a, b) => Math.abs(a[1] - h) - Math.abs(b[1] - h));
-    setSnap(targets[0][0]);
-  };
-
-  const height = drag ? `${Math.max(120, drag.h - drag.dy)}px` : SNAP_HEIGHT[snap];
-
-  return (
-    <div
-      ref={sheet}
-      className={cx(
-        "bg-surface ring-border-strong fixed inset-x-0 bottom-0 z-40 flex flex-col rounded-t-[22px] shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.5)] ring-1 lg:hidden",
-        !drag && "transition-[height] duration-[var(--dur-slow)] ease-[var(--ease-out)]",
-      )}
-      style={{ height, paddingBottom: "env(safe-area-inset-bottom)" }}
-      aria-label="Analysis panel"
-    >
-      <button
-        type="button"
-        className="flex h-6 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
-        aria-label={snap === "full" ? "Collapse panel" : "Expand panel"}
-        aria-expanded={snap !== "peek"}
-        onPointerDown={onDown}
-        onPointerMove={onMove}
-        onPointerUp={onUp}
-        onPointerCancel={() => setDrag(null)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            cycle();
-          }
-        }}
-      >
-        <span className="bg-border-strong h-1 w-10 rounded-full" />
-      </button>
-      <div className="flex shrink-0 items-center gap-1 px-3 pb-2">
-        <button
-          type="button"
-          onClick={() => {
-            setView("moves");
-            if (snap === "peek") setSnap("half");
-          }}
-          aria-pressed={view === "moves"}
-          className={cx(
-            "flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-[13px] font-medium",
-            view === "moves" ? "bg-surface-3 text-text ring-border-strong ring-1" : "text-faint",
-          )}
-        >
-          <ListTree className="size-4" aria-hidden /> Moves
-        </button>
-        <div className="min-w-0 flex-1" onClickCapture={() => setView("panel")}>
-          <PanelTabsMobile
-            active={view === "panel" ? active : null}
-            onSelect={() => snap === "peek" && setSnap("half")}
-          />
-        </div>
-      </div>
-      <div className="scroll-thin border-border min-h-0 flex-1 overflow-y-auto overscroll-contain border-t p-3">
-        {view === "moves" ? (
-          <div className="h-full min-h-[200px]">
-            <MoveList />
-          </div>
-        ) : (
-          <PanelBody module={active} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function PanelTabsMobile({ active, onSelect }: { active: ModuleManifest | null; onSelect: () => void }) {
-  return (
-    <div role="tablist" aria-label="Panels" className="scroll-thin flex gap-1 overflow-x-auto">
-      {registry
-        .routed()
-        .filter((m) => m.panel && !m.hidden)
-        .map((m) => {
-          const isActive = active?.id === m.id;
-          const Icon = m.icon;
-          return (
-            <Link
-              key={m.id}
-              href={m.route!}
-              role="tab"
-              aria-selected={isActive}
-              aria-label={m.name}
-              onClick={onSelect}
-              className={cx(
-                "flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-[13px] font-medium",
-                isActive ? "bg-surface-3 text-text ring-border-strong ring-1" : "text-faint",
-              )}
-            >
-              <Icon className="size-4" aria-hidden />
-              <span className={isActive ? "" : "sr-only sm:not-sr-only"}>{m.name}</span>
-            </Link>
-          );
-        })}
-    </div>
-  );
-}
-
 export function AppShell({ children }: { children?: ReactNode }) {
   const active = useActiveModule();
+  const group = registry.groupOf(active);
   const [help, setHelp] = useState(false);
-  // null until mounted: render both layouts (CSS decides), then only the visible one.
-  const desktop = useMediaQuery(DESKTOP_QUERY);
   useGlobalShortcuts(() => setHelp(true));
 
   return (
-    <div className="app-shell flex h-dvh overflow-hidden">
+    <div className="app-shell flex min-h-dvh flex-col">
       <a
         href="#board"
         className="bg-accent text-accent-ink sr-only z-[70] rounded-lg px-3 py-2 focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
       >
         Skip to board
       </a>
-      <Sidebar active={active} onHelp={() => setHelp(true)} />
-      <div className="flex min-w-0 flex-1 flex-col lg:flex-row">
-        <header className="flex h-14 shrink-0 items-center gap-3 px-4 lg:hidden">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="Modulo: Chess home">
-            <LogoMark className="size-8" />
-            <Wordmark className="text-[19px]" />
-          </Link>
-          <div className="ml-auto flex items-center">
-            <IconButton
-              label="Keyboard shortcuts"
-              onClick={() => setHelp(true)}
-              className="hidden sm:inline-grid"
-            >
-              <Keyboard className="size-[18px]" />
-            </IconButton>
-            <ThemeToggle />
-          </div>
-        </header>
+      <TopBar activeGroup={group} />
 
-        <main
-          id="board"
-          className="flex min-h-0 min-w-0 flex-1 flex-col items-center overflow-y-auto px-3 pb-[calc(var(--sheet-peek)+12px)] lg:justify-center-safe lg:px-8 lg:py-6 lg:pb-6"
-        >
-          <div
-            className="hidden w-full max-w-[880px] items-center justify-between pb-4 lg:flex"
-            style={{ width: "var(--board-col)" }}
-          >
-            <Wordmark />
-            <span className="text-faint text-xs">{active.description}</span>
-          </div>
-          <div className="w-full" style={{ maxWidth: "var(--board-col)" }}>
-            <BoardArea />
-          </div>
-          {desktop !== true ? (
-            <div className="mt-1 w-full lg:hidden" style={{ maxWidth: "var(--board-col)" }}>
-              <MoveStrip />
-            </div>
-          ) : null}
+      <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col items-center gap-4 px-2 pt-3 pb-24 sm:px-4 lg:flex-row lg:items-start lg:justify-center lg:gap-8 lg:px-8 lg:pt-6 lg:pb-6">
+        <main id="board" className="w-full lg:sticky lg:top-[88px]" style={{ maxWidth: "var(--board-col)" }}>
+          <BoardArea />
           {children}
         </main>
-
-        {desktop !== false ? <DesktopPanel active={active} /> : null}
+        <Panel module={active} group={group} />
       </div>
-      {desktop !== true ? <MobileSheet active={active} /> : null}
+
+      {/* Mobile move navigation, always within thumb reach. */}
+      <div className="bg-nav/95 fixed inset-x-0 bottom-0 z-40 px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] shadow-[0_-1px_0_var(--border)] backdrop-blur lg:hidden">
+        <Traverser className="mx-auto max-w-[640px]" />
+      </div>
+
       <Toasts />
       <ShortcutsDialog open={help} onClose={() => setHelp(false)} />
       <Controllers />

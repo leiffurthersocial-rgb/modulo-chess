@@ -9,6 +9,7 @@ export const settingsModule: ModuleManifest = {
   description: "Theme, board, pieces, sound and engine preferences.",
   icon: Settings2,
   route: "/settings",
+  group: "settings",
   order: 90,
   panel: SettingsPanel,
   controller: SettingsControllers,

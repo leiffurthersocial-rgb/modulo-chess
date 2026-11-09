@@ -8,6 +8,7 @@ export const gameReviewModule: ModuleManifest = {
   description: "Full-game analysis with an eval graph, accuracy and move classification.",
   icon: LineChart,
   route: "/review",
+  group: "analysis",
   order: 30,
   panel: ReviewPanel,
   shortcut: "r",

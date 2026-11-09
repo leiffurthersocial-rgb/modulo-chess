@@ -21,8 +21,13 @@ export interface ModuleManifest {
   icon: ComponentType<ModuleIconProps>;
   /** Route that opens this module's panel, e.g. "/review". "/" for the default module. */
   route?: string;
-  /** Sort order in navigation (ascending). */
+  /** Sort order within its group (ascending). */
   order: number;
+  /**
+   * Navigation group (a top-bar item). Modules sharing a group appear as tabs in
+   * that page's panel. Defaults to the module id.
+   */
+  group?: string;
   /** Panel rendered in the analysis sidebar / mobile sheet when the module is active. */
   panel?: ComponentType;
   /**
@@ -37,6 +42,22 @@ export interface ModuleManifest {
   hidden?: boolean;
 }
 
+/** A top-level navigation entry (one page). */
+export interface NavGroup {
+  id: string;
+  label: string;
+  icon: ComponentType<ModuleIconProps>;
+  order: number;
+  /** Show the move list + move navigation in this page's panel. */
+  showMoves: boolean;
+}
+
+export interface ResolvedNavGroup extends NavGroup {
+  /** Route of the group's first module (what the top-bar link opens). */
+  route: string;
+  modules: ModuleManifest[];
+}
+
 export interface ModuleRegistry {
   modules: readonly ModuleManifest[];
   byId(id: string): ModuleManifest | undefined;
@@ -44,4 +65,7 @@ export interface ModuleRegistry {
   /** Modules with a route, in navigation order. */
   routed(): ModuleManifest[];
   defaultModule: ModuleManifest;
+  /** Navigation groups with their routed modules, in order. */
+  groups(): ResolvedNavGroup[];
+  groupOf(module: ModuleManifest): ResolvedNavGroup;
 }

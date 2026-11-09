@@ -8,7 +8,8 @@ export const openingsModule: ModuleManifest = {
   description: "Opening names (ECO) for the current position and book continuations.",
   icon: BookOpen,
   route: "/openings",
-  order: 50,
+  group: "analysis",
+  order: 40,
   panel: OpeningsPanel,
   shortcut: "o",
 };

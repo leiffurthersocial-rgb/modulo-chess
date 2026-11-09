@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ClipboardCopy, Download, FileUp, Upload } from "lucide-react";
+import { Check, ClipboardCopy, Download, FileUp, RotateCcw, Upload } from "lucide-react";
 import { useId, useMemo, useRef, useState } from "react";
 import { checkFen, parsePgn, serializePgn, PgnError, type ParsedGame } from "@/core/chess/pgn";
 import { createTree } from "@/core/chess/tree";
@@ -134,6 +134,9 @@ export function ImportExportPanel() {
           </Button>
           <Button size="sm" onClick={() => fileRef.current?.click()}>
             <FileUp className="size-3.5" aria-hidden /> Open .pgn file
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => useGame.getState().newGame()}>
+            <RotateCcw className="size-3.5" aria-hidden /> Reset board
           </Button>
           <input
             ref={fileRef}

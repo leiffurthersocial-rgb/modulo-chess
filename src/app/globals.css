@@ -3,77 +3,84 @@
 /* ──────────────────────────────────────────────────────────────────────────
    Modulo design tokens. Components use the Tailwind aliases (bg-surface,
    text-muted, …) which resolve to these variables, so themes are pure CSS.
+   Palette: layered slate shades with a single blue accent.
    ────────────────────────────────────────────────────────────────────────── */
 
 :root,
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0a0c0f;
-  --bg-glow: rgba(196, 242, 82, 0.05);
-  --surface: #111419;
-  --surface-2: #171b21;
-  --surface-3: #1f242c;
-  --surface-hover: #232932;
-  --border: #222831;
-  --border-strong: #2f3741;
-  --text: #eceef1;
-  --muted: #a1a9b5;
-  --faint: #6f7886;
-  --accent: #c4f252;
-  --accent-strong: #d8ff73;
-  --accent-ink: #0b0e07;
-  --accent-soft: rgba(196, 242, 82, 0.12);
-  --focus: #c4f252;
+  --bg: #101216;
+  --nav: #17191e;
+  --surface: #1f2125;
+  --surface-2: #17191e;
+  --surface-3: #2c2f35;
+  --surface-hover: #3b3e43;
+  --border: #2a2d33;
+  --border-strong: #3e4349;
+  --text: #f4f5f7;
+  --muted: #b2b8c2;
+  --faint: #7d838c;
+  --accent: #467de8;
+  --accent-strong: #5a8df0;
+  --accent-shadow: #2f5bb5;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(70, 125, 232, 0.16);
+  --focus: #8cb0ff;
   --danger: #ff6b6b;
+  --danger-shadow: #9b2f2f;
   --warning: #f5c451;
-  --eval-white: #f1f1ec;
-  --eval-black: #23272e;
-  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 20px 50px -20px rgba(0, 0, 0, 0.6);
-  --board-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04);
-  --scrim: rgba(4, 6, 9, 0.6);
+  --press-shadow: #16171b;
+  --eval-white: #f2f2f2;
+  --eval-black: #2b2d33;
+  --board-shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.7);
+  --scrim: rgba(6, 7, 9, 0.6);
+  --shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.6);
 
-  --c-best: #4ed6a6;
-  --c-excellent: #7fd18c;
-  --c-good: #9fb7a5;
-  --c-book: #c3a17a;
+  --c-best: #21c45d;
+  --c-excellent: #5fb94d;
+  --c-good: #8cb07a;
+  --c-book: #b08a5f;
   --c-inaccuracy: #f2c14e;
-  --c-mistake: #f28a3d;
-  --c-blunder: #f25454;
+  --c-mistake: #f2873d;
+  --c-blunder: #f04848;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f4f4f0;
-  --bg-glow: rgba(90, 130, 20, 0.06);
+  --bg: #eef0f3;
+  --nav: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f7f7f3;
-  --surface-3: #ecece6;
-  --surface-hover: #e7e7e0;
-  --border: #e3e3dc;
-  --border-strong: #cfcfc6;
-  --text: #15181d;
-  --muted: #535c69;
-  --faint: #7f8794;
-  --accent: #4f7a0e;
-  --accent-strong: #3f6409;
+  --surface-2: #f4f5f7;
+  --surface-3: #e9ebef;
+  --surface-hover: #dde0e6;
+  --border: #e1e4e9;
+  --border-strong: #c9cdd5;
+  --text: #15171b;
+  --muted: #4d5562;
+  --faint: #7a8290;
+  --accent: #3b6fd8;
+  --accent-strong: #2f60c4;
+  --accent-shadow: #234a9c;
   --accent-ink: #ffffff;
-  --accent-soft: rgba(79, 122, 14, 0.1);
-  --focus: #3f6409;
-  --danger: #c62f2f;
+  --accent-soft: rgba(59, 111, 216, 0.12);
+  --focus: #2f60c4;
+  --danger: #cf3030;
+  --danger-shadow: #8e1f1f;
   --warning: #9a6700;
-  --eval-white: #fbfbf8;
-  --eval-black: #2a2e35;
-  --shadow: 0 1px 2px rgba(20, 24, 30, 0.04), 0 12px 40px -18px rgba(20, 24, 30, 0.18);
-  --board-shadow: 0 24px 60px -28px rgba(20, 24, 30, 0.45), 0 0 0 1px rgba(20, 24, 30, 0.06);
+  --press-shadow: #c4c8d0;
+  --eval-white: #ffffff;
+  --eval-black: #2b2d33;
+  --board-shadow: 0 16px 40px -22px rgba(20, 24, 30, 0.45);
   --scrim: rgba(20, 24, 30, 0.35);
+  --shadow: 0 10px 30px -14px rgba(20, 24, 30, 0.25);
 
-  --c-best: #13976b;
-  --c-excellent: #3e9a4f;
-  --c-good: #5f7b67;
+  --c-best: #16a34a;
+  --c-excellent: #4c9a3c;
+  --c-good: #6b8a5c;
   --c-book: #8b6a43;
   --c-inaccuracy: #b7860b;
   --c-mistake: #c8611a;
-  --c-blunder: #cf2e2e;
+  --c-blunder: #d32f2f;
 }
 
 :root {
@@ -83,14 +90,14 @@
   --dur: 220ms;
   --dur-slow: 420ms;
   --piece-dur: 190ms;
-  --radius: 14px;
 
   /* Board highlight overlays (theme-independent; the board has its own colours). */
-  --hl-last: rgba(214, 255, 102, 0.42);
-  --hl-selected: rgba(214, 255, 102, 0.55);
-  --hl-dest: rgba(10, 14, 20, 0.22);
-  --hl-check: rgba(255, 64, 64, 0.85);
-  --hl-hover: rgba(255, 255, 255, 0.55);
+  --hl-last: rgba(255, 221, 64, 0.42);
+  --hl-selected: rgba(255, 221, 64, 0.55);
+  --hl-dest: rgba(20, 30, 40, 0.24);
+  --hl-check: rgba(255, 52, 52, 0.85);
+  --hl-hover: rgba(255, 255, 255, 0.6);
+  --arrow: #2f8cf0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -115,6 +122,7 @@
 
 @theme inline {
   --color-bg: var(--bg);
+  --color-nav: var(--nav);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
@@ -130,18 +138,10 @@
   --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
   --color-warning: var(--warning);
-  --color-best: var(--c-best);
-  --color-excellent: var(--c-excellent);
-  --color-good: var(--c-good);
-  --color-book: var(--c-book);
-  --color-inaccuracy: var(--c-inaccuracy);
-  --color-mistake: var(--c-mistake);
-  --color-blunder: var(--c-blunder);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
-  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-sans: var(--font-noto-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", monospace;
+  --font-display: var(--font-nunito), ui-rounded, system-ui, sans-serif;
   --ease-out: var(--ease-out);
-  --radius-panel: var(--radius);
 }
 
 * {
@@ -150,17 +150,15 @@
 
 html,
 body {
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
-  background: radial-gradient(1200px 600px at 50% -10%, var(--bg-glow), transparent 60%), var(--bg);
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
-  font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: none;
 }
 
 ::selection {
@@ -171,7 +169,7 @@ body {
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .tabular {
@@ -194,6 +192,66 @@ body {
   background-clip: padding-box;
 }
 
+/* ── Pressable controls (3D buttons, chips, tabs) ──────────────────────── */
+
+.press {
+  box-shadow: 0 4px 0 var(--press-shadow);
+  transform: translateY(0);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast),
+    color var(--dur-fast),
+    filter var(--dur-fast);
+}
+.press:hover {
+  filter: brightness(1.08);
+}
+.press:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--press-shadow);
+}
+.press-accent {
+  box-shadow: 0 4px 0 var(--accent-shadow);
+}
+.press-danger {
+  box-shadow: 0 4px 0 var(--danger-shadow);
+}
+.press-accent:active,
+.press-danger:active {
+  box-shadow: 0 0 0 transparent;
+}
+
+.chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-3);
+  color: var(--muted);
+  text-align: left;
+  box-shadow: 0 4px 0 var(--press-shadow);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast),
+    background-color var(--dur-fast),
+    color var(--dur-fast);
+}
+.chip:hover {
+  color: var(--text);
+}
+.chip:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+.chip-active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 0 var(--accent-shadow);
+}
+
 /* Skeleton shimmer */
 @keyframes shimmer {
   from {
@@ -204,7 +262,7 @@ body {
   }
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%);
+  background: linear-gradient(90deg, var(--surface-3) 0%, var(--surface-hover) 50%, var(--surface-3) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
   border-radius: 8px;
@@ -213,25 +271,27 @@ body {
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    translate: 0 4px;
   }
   to {
     opacity: 1;
-    transform: none;
+    translate: 0 0;
   }
 }
 .animate-in {
   animation: fade-in var(--dur) var(--ease-out) both;
 }
 
+/* Uses the independent `scale` property so it never overrides an element's
+   positioning `transform` (this previously knocked move dots off-centre). */
 @keyframes pop-in {
   from {
     opacity: 0;
-    transform: scale(0.6);
+    scale: 0.5;
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    scale: 1;
   }
 }
 
@@ -254,7 +314,7 @@ body {
   position: relative;
   aspect-ratio: 1 / 1;
   width: 100%;
-  border-radius: 10px;
+  border-radius: 6px;
   overflow: hidden;
   box-shadow: var(--board-shadow);
   touch-action: none;
@@ -285,31 +345,18 @@ body {
 }
 .board-square .hl-last {
   background: var(--hl-last);
-  mix-blend-mode: multiply;
-}
-:root[data-theme="dark"] .board-square .hl-last {
-  mix-blend-mode: normal;
-  opacity: 0.85;
 }
 .board-square .hl-selected {
   background: var(--hl-selected);
 }
-.board-square .hl-check {
-  background: radial-gradient(
-    circle at 50% 50%,
-    var(--hl-check) 0%,
-    rgba(255, 64, 64, 0.45) 40%,
-    transparent 72%
-  );
-}
+/* Legal move dot: centred with inset + margin (no transform). */
 .board-square .hl-dest::after {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 30%;
-  height: 30%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  margin: auto;
+  width: 32%;
+  height: 32%;
   border-radius: 999px;
   background: var(--hl-dest);
   animation: pop-in var(--dur-fast) var(--ease-out) both;
@@ -317,9 +364,9 @@ body {
 .board-square .hl-capture::after {
   content: "";
   position: absolute;
-  inset: 4%;
+  inset: 0;
   border-radius: 999px;
-  border: 0.45em solid var(--hl-dest);
+  box-shadow: inset 0 0 0 0.42em var(--hl-dest);
   animation: pop-in var(--dur-fast) var(--ease-out) both;
 }
 .board-square .hl-hover {
@@ -330,20 +377,19 @@ body {
 }
 .board-coord {
   position: absolute;
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: clamp(8px, 1.6cqw, 12px);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(8px, 1.7cqw, 13px);
   line-height: 1;
   pointer-events: none;
-  opacity: 0.9;
 }
 .board-coord.file {
-  right: 6%;
-  bottom: 5%;
+  right: 5%;
+  bottom: 4%;
 }
 .board-coord.rank {
-  left: 6%;
-  top: 6%;
+  left: 5%;
+  top: 5%;
 }
 
 .board-pieces {
@@ -365,11 +411,7 @@ body {
 .piece[data-dragging="true"] {
   transition: none;
   z-index: 20;
-  transform-origin: center;
   filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.35));
-}
-.piece[data-ghost="true"] {
-  opacity: 0.3;
 }
 .board[data-interactive="true"] .board-square[data-movable="true"] {
   cursor: grab;
@@ -384,22 +426,22 @@ body {
   pointer-events: none;
   z-index: 10;
 }
+/* Classification badge: positioned by its centre via translate; pop-in uses `scale`. */
 .board-badge {
   position: absolute;
   z-index: 15;
-  width: 4.6%;
-  height: 4.6%;
-  min-width: 16px;
-  min-height: 16px;
+  width: 5.2%;
+  height: 5.2%;
+  min-width: 18px;
+  min-height: 18px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  font-weight: 800;
-  font-size: clamp(8px, 1.5cqw, 12px);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(9px, 1.6cqw, 13px);
   color: #fff;
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.35),
-    0 0 0 2px rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   transform: translate(-50%, -50%);
   animation: pop-in var(--dur) var(--ease-spring) both;
   pointer-events: none;
@@ -416,40 +458,40 @@ body {
   cursor: pointer;
 }
 .modulo-range::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 4px;
-  background: linear-gradient(to right, var(--accent) var(--pct), var(--surface-3) var(--pct));
+  height: 6px;
+  border-radius: 6px;
+  background: linear-gradient(to right, var(--accent) var(--pct), var(--surface-hover) var(--pct));
 }
 .modulo-range::-moz-range-track {
-  height: 4px;
-  border-radius: 4px;
-  background: var(--surface-3);
+  height: 6px;
+  border-radius: 6px;
+  background: var(--surface-hover);
 }
 .modulo-range::-moz-range-progress {
-  height: 4px;
-  border-radius: 4px;
+  height: 6px;
+  border-radius: 6px;
   background: var(--accent);
 }
 .modulo-range::-webkit-slider-thumb {
   appearance: none;
   margin-top: -6px;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 999px;
-  background: var(--text);
-  box-shadow: 0 0 0 4px var(--accent-soft);
-  transition: transform var(--dur-fast) var(--ease-out);
+  background: #fff;
+  box-shadow: 0 2px 0 var(--accent-shadow);
+  transition: scale var(--dur-fast) var(--ease-out);
 }
 .modulo-range::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border: 0;
   border-radius: 999px;
-  background: var(--text);
-  box-shadow: 0 0 0 4px var(--accent-soft);
+  background: #fff;
+  box-shadow: 0 2px 0 var(--accent-shadow);
 }
 .modulo-range:active::-webkit-slider-thumb {
-  transform: scale(1.15);
+  scale: 1.15;
 }
 .modulo-range:focus-visible {
   outline: none;
@@ -461,16 +503,13 @@ body {
   box-shadow: 0 0 0 3px var(--focus);
 }
 
-/* ── Shell sizing ─────────────────────────────────────────────────────────
-   Mobile: the board takes the full width; the bottom sheet's resting ("peek")
-   height is whatever vertical space is left. Desktop: the board column fits
-   the viewport height. --board-col includes the eval-bar column. */
+/* ── Layout ────────────────────────────────────────────────────────────── */
 .app-shell {
-  --board-col: max(240px, min(100vw - 24px, 640px, 100dvh - 290px));
-  --sheet-peek: max(104px, 100dvh - var(--board-col) - 222px);
+  /* Board column width (board + eval bar). Mobile: full width; desktop: fit height. */
+  --board-col: min(100vw - 16px, 640px);
 }
 @media (min-width: 1024px) {
   .app-shell {
-    --board-col: max(360px, min(880px, 100dvh - 186px));
+    --board-col: max(380px, min(860px, 100dvh - 200px, 100vw - 520px));
   }
 }

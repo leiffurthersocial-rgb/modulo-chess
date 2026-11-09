@@ -22,6 +22,21 @@ describe("createRegistry", () => {
     expect(r.routed().map((x) => x.id)).toEqual(["a", "b"]);
     expect(routeSegments(r)).toEqual([{ slug: [] }, { slug: ["b"] }]);
   });
+  it("groups modules into navigation entries", () => {
+    const r = createRegistry(
+      [
+        { ...m("e", "/analysis", 1), group: "an" },
+        { ...m("rv", "/review", 2), group: "an" },
+        m("s", "/settings", 3),
+      ],
+      [{ id: "an", label: "Analyse", icon: Icon, order: 5, showMoves: true }],
+    );
+    expect(r.groups().map((g) => [g.id, g.label, g.route, g.modules.length])).toEqual([
+      ["s", "s", "/settings", 1],
+      ["an", "Analyse", "/analysis", 2],
+    ]);
+    expect(r.groupOf(r.byId("rv")!).id).toBe("an");
+  });
   it("rejects duplicate ids and routes", () => {
     expect(() => createRegistry([m("a", "/x"), m("a", "/y")])).toThrow(/Duplicate module id/);
     expect(() => createRegistry([m("a", "/x"), m("b", "x")])).toThrow(/claimed/);

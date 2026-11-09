@@ -10,28 +10,28 @@ export interface BoardTheme {
 
 export const BOARD_THEMES: BoardTheme[] = [
   {
+    id: "wood",
+    name: "Wood",
+    light: "#f0d9b5",
+    dark: "#b58863",
+    coordLight: "#b58863",
+    coordDark: "#f0d9b5",
+  },
+  {
+    id: "green",
+    name: "Green",
+    light: "#eeeed2",
+    dark: "#769656",
+    coordLight: "#769656",
+    coordDark: "#eeeed2",
+  },
+  {
     id: "graphite",
     name: "Graphite",
     light: "#c9ced6",
     dark: "#737c8c",
     coordLight: "#5b6474",
     coordDark: "#dfe3ea",
-  },
-  {
-    id: "walnut",
-    name: "Walnut",
-    light: "#ead3b0",
-    dark: "#ad7f57",
-    coordLight: "#8f6643",
-    coordDark: "#f4e4cb",
-  },
-  {
-    id: "sage",
-    name: "Sage",
-    light: "#e6e9cf",
-    dark: "#7e9764",
-    coordLight: "#667d4e",
-    coordDark: "#eef1dc",
   },
   {
     id: "glacier",
@@ -51,7 +51,7 @@ export const BOARD_THEMES: BoardTheme[] = [
   },
 ];
 
-export const DEFAULT_BOARD_THEME = "graphite";
+export const DEFAULT_BOARD_THEME = "wood";
 
 export function boardTheme(id: string): BoardTheme {
   return BOARD_THEMES.find((t) => t.id === id) ?? BOARD_THEMES[0];
