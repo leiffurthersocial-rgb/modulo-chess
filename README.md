@@ -2,11 +2,15 @@
 
 **A modular chess analysis and play platform. Stockfish 19 runs entirely in your browser: no account, no backend, and nothing leaves your device.**
 
-Every feature is an isolated _module_ that plugs into a small core: the board, the engine, game review, import/export, openings and settings. New features can be added without refactoring anything, which is where the name comes from. The logo is a modulo operator (`%`) whose dots are chess squares.
+Every feature is an isolated _module_ that plugs into a small core: the board and play, an Elo estimate, the engine, game review, import/export, openings and settings. New features can be added without refactoring anything, which is where the name comes from. The logo is a modulo operator (`%`) whose dots are chess squares.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fleiffurthersocial-rgb%2Fmodulo-chess&project-name=modulo-chess&repository-name=modulo-chess)
 
-| Game review (dark)                               | Openings (light, Walnut + Merida)                         |
+| Play vs Stockfish (Elo 250–3190)              | Elo estimate                                   |
+| --------------------------------------------- | ---------------------------------------------- |
+| ![Play setup](docs/screenshots/play-dark.jpg) | ![Elo estimate](docs/screenshots/elo-dark.jpg) |
+
+| Game review                                      | Openings (light theme, Merida pieces)                     |
 | ------------------------------------------------ | --------------------------------------------------------- |
 | ![Game review](docs/screenshots/review-dark.jpg) | ![Openings explorer](docs/screenshots/openings-light.jpg) |
 
@@ -23,7 +27,14 @@ Every feature is an isolated _module_ that plugs into a small core: the board, t
 - Custom animated board: drag-and-drop (mouse and touch), click-to-move, legal-move hints, last-move and check highlights, promotion picker, flip, coordinates.
 - Moves animate because piece identity is tracked between positions; a CSS transform does the rest.
 - Move list with **variations** (every move from an earlier position creates a branch), comments and NAGs, plus promote/delete variation. Navigate with the arrow keys or by clicking.
-- Play against Stockfish at **Skill Level 0–20** or a **target Elo (1320–3190)** via `UCI_LimitStrength`, as White, Black or random, optionally from the current position. Takeback, resign, rematch, and one click to review the game.
+- Play Stockfish at any **Elo from 250 to 3190**, with presets from Beginner (400) to Maximum. From 1320 up, Stockfish's own `UCI_LimitStrength`/`UCI_Elo` is used. Below 1320 (Stockfish's floor), Modulo weakens it itself: a shallower MultiPV search, a move _sampled_ by how much win probability it gives away, and occasional beginner-style oversights (`src/core/engine/strength.ts`).
+- Play as White, Black or random, optionally from the current position. Takeback, resign, rematch, and one click to review the game.
+
+**Elo estimate**
+
+- **Quick estimate (1 game):** the opponent adapts while you play. After a few moves it moves halfway towards your running estimate, at most 200 points at a time.
+- **Full estimate (3 games):** colours alternate, and each new opponent is set to your estimate so far. This gives a tighter range.
+- Every position is evaluated in the background on the analysis engine. Your non-book moves are scored by **win-probability accuracy** (harmonic mean, as lichess does, so single blunders count) and **average centipawn loss**. Move quality is blended with a **performance rating** from your results against each opponent's Elo, and quality gets more weight the longer the game. You get an estimate with a likely range (`src/core/analysis/eloEstimate.ts`). Past estimates are kept in `localStorage`.
 
 **Local Stockfish analysis**
 
@@ -50,8 +61,8 @@ Every feature is an isolated _module_ that plugs into a small core: the board, t
 **Design**
 
 - Dark theme by default plus light and system themes, all as CSS variables. There are 5 board themes and 4 open-licensed piece sets.
-- Typography: Geist, Geist Mono for numbers and moves, and Instrument Serif for display text. Motion is subtle and respects `prefers-reduced-motion`.
-- Responsive. On desktop: nav rail, centred board, tabbed analysis panel and move list. On mobile: full-width board, a move strip, and a draggable bottom sheet.
+- Clear two-part layout. A top bar holds the pages (Play, Elo estimate, Analysis, Settings). The board stands alone on the left, with player cards and the eval bar. **All controls** live in one panel card on the right: a title banner, chunky tabs for the page's tools, the content, the move list, and move navigation at the bottom. On mobile the panel sits below the board and move navigation is pinned to the bottom of the screen.
+- Slate palette with a single blue accent, Nunito for headings and buttons, Noto Sans for text, and JetBrains Mono for moves and numbers. Buttons are "pressable" 3D controls. Motion is subtle and respects `prefers-reduced-motion`.
 - Accessible: the board is an ARIA grid with a roving keyboard cursor (arrows + Enter to move pieces). Visible focus states, live regions for engine and game status, a skip link, and a `?` shortcut sheet.
 - Synthesized move, capture, check and game-end sounds (WebAudio, no audio assets), which can be toggled off.
 
@@ -85,7 +96,7 @@ npm i -D playwright && npx playwright install chromium   # once
 npm run verify:engine -- http://localhost:3000
 ```
 
-This drives a real Chromium through 15 checks:
+This drives a real Chromium through 16 checks:
 
 - cross-origin isolation and the multi-threaded boot
 - 3 MultiPV lines that deepen with nodes/sec
@@ -93,7 +104,8 @@ This drives a real Chromium through 15 checks:
 - a clean stop
 - PGN import with variations, then a full-game review
 - drag-and-drop and keyboard-only moves
-- a reply from the engine opponent
+- a reply from a 400-Elo (custom-weakened) engine opponent
+- a quick Elo estimate that ends in a rating
 - the single-threaded fallback when COOP/COEP are stripped
 - mobile overflow and page errors
 
@@ -105,19 +117,20 @@ src/
 ├── core/                     Framework-free logic (unit tested)
 │   ├── engine/               EngineService (UCI client), transport, parser, eval math, worker boot, pool
 │   ├── chess/                Game tree with variations, PGN parser/serializer, FEN helpers
-│   ├── analysis/             Move classification + accuracy
+│   ├── analysis/             Move classification, accuracy, Elo estimation
 │   ├── modules/              ModuleManifest type + registry
 │   ├── models/               Domain models & repository interfaces for roadmap features
 │   └── sound/                WebAudio sound kit
 ├── modules/                  ← features live here
 │   ├── registry.ts           the only list of installed modules
 │   ├── board/                Play panel, engine opponent controller, sounds + hotkeys
+│   ├── elo-estimate/         Quick / full Elo estimate: panel, session, background evaluator
 │   ├── engine/               Engine panel + live-analysis controller
 │   ├── game-review/          Review panel, eval graph, review runner
 │   ├── import-export/        PGN/FEN import & export
 │   ├── openings/             ECO lookup, explorer provider interface, bundled data
 │   └── settings/             Settings panel + theme controller
-├── stores/                   Zustand stores (game, engine, review, settings, openings, toasts)
+├── stores/                   Zustand stores (game, engine, review, elo, settings, openings, toasts)
 ├── components/               board/, shell/ (AppShell, BoardArea, MoveList), ui/ primitives
 └── themes/                   Board themes and piece-set metadata
 ```
@@ -125,10 +138,10 @@ src/
 ```mermaid
 flowchart LR
   subgraph Shell["App shell (root layout)"]
-    Nav[Nav rail / tabs] --- Board[BoardArea + MoveList] --- Panel[Active module panel]
+    Nav[Top bar: nav groups] --- Board[BoardArea] --- Panel[Panel: tabs · module · moves · navigation]
   end
   Registry[(modules/registry.ts)] -->|manifests| Shell
-  Registry --> Controllers[Module controllers<br/>engine · play · sounds · theme]
+  Registry --> Controllers[Module controllers<br/>engine · play · elo · sounds · theme]
   Controllers --> Stores[(Zustand stores<br/>game · engine · review · settings)]
   Shell <--> Stores
   Controllers --> Pool[Engine pool<br/>analysis · play]
@@ -147,15 +160,16 @@ export interface ModuleManifest {
   description: string; // page metadata + header
   icon: ComponentType; // lucide-react icon
   route?: string; // e.g. "/review"; "/" = default module
-  order: number; // nav order
-  panel?: ComponentType; // shown in the analysis panel / mobile sheet
+  order: number; // order within its group
+  group?: string; // top-bar page it belongs to (defaults to its id)
+  panel?: ComponentType; // shown in the page's panel
   controller?: ComponentType; // headless, mounted once for the app's lifetime
   shortcut?: string; // single key that opens the panel
   hidden?: boolean;
 }
 ```
 
-The registry (`createRegistry`) validates ids and routes so mistakes fail the build. The shell derives everything else from the manifests: the sidebar, panel tabs, mobile sheet tabs, keyboard shortcuts, background controllers and the statically generated routes, via `generateStaticParams` in `app/[[...slug]]/page.tsx`. The workspace lives in the root layout, so the board, engine and review state survive navigation between modules.
+The registry (`createRegistry(manifests, navGroups)`) validates ids and routes so mistakes fail the build. Each **nav group** is one top-bar page; modules that share a group become tabs in that page's panel. For example, `engine`, `game-review`, `openings` and `import-export` all sit under **Analysis**. The shell derives everything else from the manifests: the top bar, panel tabs, keyboard shortcuts, background controllers and the statically generated routes, via `generateStaticParams` in `app/[[...slug]]/page.tsx`. The workspace lives in the root layout, so the board, engine and review state survive navigation between modules.
 
 ### Adding a module
 
@@ -172,14 +186,15 @@ The registry (`createRegistry`) validates ids and routes so mistakes fail the bu
      description: "Tactics training.",
      icon: Puzzle,
      route: "/puzzles",
+     group: "puzzles", // or "analysis" to appear as a tab on the Analysis page
      order: 60,
      panel: PuzzlesPanel,
      shortcut: "z",
    };
    ```
-3. Add `puzzlesModule` to the array in `src/modules/registry.ts`.
+3. Add `puzzlesModule` to the array in `src/modules/registry.ts`. If it starts a new page, also add a `NavGroup` (label, icon, order, `showMoves`) to `NAV_GROUPS` there.
 
-That's all. `/puzzles` is generated at build time, and the module appears in navigation and in the mobile sheet. If the module needs background work, such as a clock or a websocket, give it a `controller`. If it needs the engine, call `getEngine("analysis" | "play")` from `src/core/engine/pool.ts`, or add a new role.
+That's all. `/puzzles` is generated at build time, and the module appears in the top bar, or as a tab on its group's page. If the module needs background work, such as a clock or a websocket, give it a `controller`. If it needs the engine, call `getEngine("analysis" | "play")` from `src/core/engine/pool.ts`, or add a new role.
 
 ## How Stockfish is integrated
 
@@ -239,7 +254,7 @@ vercel git connect   # deploy automatically on push
 vercel --prod        # first production deploy
 ```
 
-After deploying, open the site and run `crossOriginIsolated` in the console; it should print `true`. The Engine panel should show `· multi-threaded`.
+After deploying, open the site and run `crossOriginIsolated` in the console; it should print `true`. The Analysis → Engine tab should show `· multi-threaded`.
 
 ## Licensing
 
@@ -268,7 +283,7 @@ The design is ready for these; none of them are built yet. Domain models and rep
 
 - Games live in memory; a full page reload starts a fresh board. Settings persist. Saved games are on the roadmap.
 - The lite NNUE is weaker than full Stockfish (still far beyond human strength). Depth/nps are lower in single-threaded mode, for example on hosts without COOP/COEP or in browsers that refuse `SharedArrayBuffer`.
-- Elo-limited play uses Stockfish's own `UCI_Elo` calibration (engine-vs-engine, long time controls), so it can feel stronger than human ratings suggest at the low end.
+- From 1320 up, play uses Stockfish's own `UCI_Elo` calibration (engine-vs-engine, long time controls), which can feel stronger than human ratings at the low end. Levels below 1320 come from Modulo's own weakening model, which is tuned by hand rather than calibrated against rated humans.
+- Elo estimates are heuristic. The accuracy and centipawn-loss curves are approximations of typical online ratings, and short or one-sided games carry little information. That's why a range is shown, and why the full 3-game mode is more reliable.
 - Accuracy uses a plain mean of per-move accuracy (lichess uses a volatility-weighted blend), so numbers differ slightly from lichess and chess.com.
-- On short phone screens the bottom sheet's half and full states cover the board controls; swipe the sheet down to reach them.
 - Under Partial Prerendering, unknown URLs show the in-app "Off the board" message but return HTTP 200.
