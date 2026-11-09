@@ -10,9 +10,9 @@ Every feature is an isolated _module_ that plugs into a small core: the board an
 | --------------------------------------------- | ---------------------------------------------- |
 | ![Play setup](docs/screenshots/play-dark.jpg) | ![Elo estimate](docs/screenshots/elo-dark.jpg) |
 
-| Game review                                      | Openings (light theme, Merida pieces)                     |
-| ------------------------------------------------ | --------------------------------------------------------- |
-| ![Game review](docs/screenshots/review-dark.jpg) | ![Openings explorer](docs/screenshots/openings-light.jpg) |
+| Game report: classifications, accuracy, Elo per player | Game report (light theme, Merida pieces)                 |
+| ------------------------------------------------------ | -------------------------------------------------------- |
+| ![Game report](docs/screenshots/review-dark.jpg)       | ![Game report, light](docs/screenshots/report-light.jpg) |
 
 | Live engine analysis                              | Mobile                                                                         |
 | ------------------------------------------------- | ------------------------------------------------------------------------------ |
@@ -44,19 +44,28 @@ Every feature is an isolated _module_ that plugs into a small core: the board an
 - **MultiPV 1–5** with principal variations in SAN. Hover or click a move to preview it on the board, double-click to play the line up to that move, and ▶ to play the first move. Best-move arrows are drawn for each line.
 - Start/stop toggle (`E`), plus threads, hash, depth limit and MultiPV, all persisted in `localStorage`.
 
-**Game review**
+**Game report** (Analysis → Report, modelled on chess.com's Game Review and WintrChess)
 
-- Evaluates every main-line position at a chosen depth (each capped at 3 s). Moves are classified **book / best / excellent / good / inaccuracy / mistake / blunder** by win-probability loss (chess.com's expected-points bands).
-- Per-side accuracy (lichess formula), an interactive eval graph with mistake markers, key moments, and "best was …" for each move.
+- Paste, upload or drop a PGN and the analysis **starts immediately**. Loading from the Import page, or pressing "Review" after a game, does the same.
+- Every move gets one of 11 classes: **brilliant, great, best, excellent, good, book, forced, inaccuracy, mistake, miss, blunder** (`src/core/analysis/classify.ts`, `report.ts`):
+  - **Loss bands** on win-probability loss: excellent < 2%, good < 5%, inaccuracy < 10%, mistake < 20%, otherwise blunder.
+  - **Brilliant:** a sound **sacrifice**, where the move newly leaves ≥ 2 pawns of material en prise beyond what it captured (`sacrifice.ts`). It must be (near-)best and leave you ≥ 40%. In an already-won position it must also be the key to the win (forces mate, or the alternatives are ≥ 10% worse).
+  - **Great:** the engine's move when the second-best is ≥ 20% worse and changes the outcome. Recaptures, escapes from check and mating moves never count.
+  - **Miss:** a mistake or blunder right after the opponent's error, when you're still doing fine afterwards (you failed to punish it rather than lost).
+  - **Forced:** the only legal move. **Book:** moves while the game stays in the bundled ECO lines.
+- **Accuracy** follows lichess' algorithm: a volatility-weighted mean averaged with a harmonic mean, so single blunders count.
+- **Estimated Elo for both players**, from move accuracy and average centipawn loss in that game (`eloEstimate.ts`). In testing, Kasparov–Topalov 1999 gave ≈2875 / ≈2500–2775 depending on depth, and Morphy's Opera Game gave ≈2900 / ≈1650.
+- An interactive eval graph with coloured markers, a move-quality table, key moments, and a per-move card ("Rd1 is the only good move…"). It shows the best alternative and its line, with a board preview, and can play it as a variation. A green "best was" arrow appears on the board, and every move in the list gets its icon.
+- **Fast:** positions are spread across parallel single-threaded Stockfish workers (cores − 1). See _Performance_ below.
 
 **Import / export**
 
-- Paste PGN or FEN (auto-detected), open a `.pgn` file, or drag-and-drop one. Multi-game files open a picker.
-- Copy the FEN, and copy or download the PGN with variations, comments and NAGs preserved (the PGN parser and serializer handle nested RAVs).
+- The Report tab's loader accepts PGN or FEN (auto-detected), a `.pgn` upload, or drag-and-drop. Multi-game files open a picker.
+- Copy or download the PGN (variations, comments and NAGs preserved) from the report. The full import/export page (with FEN copy) is still at `/import`.
 
 **Openings**
 
-- Names the current opening (ECO code + name) from 3,800+ bundled lines (CC0), with book continuations from the current position. It is built on an `OpeningExplorerProvider` interface so a database-backed explorer can be added later.
+- The Engine tab names the current opening (ECO code + name) from 3,800+ bundled lines (CC0). The full panel at `/openings` adds book continuations, and is built on an `OpeningExplorerProvider` interface so a database-backed explorer can be added later.
 
 **Design**
 
@@ -96,13 +105,13 @@ npm i -D playwright && npx playwright install chromium   # once
 npm run verify:engine -- http://localhost:3000
 ```
 
-This drives a real Chromium through 16 checks:
+This drives a real Chromium through 17 checks:
 
 - cross-origin isolation and the multi-threaded boot
 - 3 MultiPV lines that deepen with nodes/sec
 - correct lines after rapid position changes
 - a clean stop
-- PGN import with variations, then a full-game review
+- loading a PGN with variations in the Report tab: auto-analysis, move classes, an Elo estimate for both players, and key moments
 - drag-and-drop and keyboard-only moves
 - a reply from a 400-Elo (custom-weakened) engine opponent
 - a quick Elo estimate that ends in a rating
@@ -126,7 +135,7 @@ src/
 │   ├── board/                Play panel, engine opponent controller, sounds + hotkeys
 │   ├── elo-estimate/         Quick / full Elo estimate: panel, session, background evaluator
 │   ├── engine/               Engine panel + live-analysis controller
-│   ├── game-review/          Review panel, eval graph, review runner
+│   ├── game-review/          Game report: loader, parallel review runner, eval graph
 │   ├── import-export/        PGN/FEN import & export
 │   ├── openings/             ECO lookup, explorer provider interface, bundled data
 │   └── settings/             Settings panel + theme controller
@@ -159,7 +168,7 @@ export interface ModuleManifest {
   name: string; // nav / tab label
   description: string; // page metadata + header
   icon: ComponentType; // lucide-react icon
-  route?: string; // e.g. "/review"; "/" = default module
+  route?: string; // e.g. "/analysis"; "/" = default module
   order: number; // order within its group
   group?: string; // top-bar page it belongs to (defaults to its id)
   panel?: ComponentType; // shown in the page's panel
@@ -169,7 +178,7 @@ export interface ModuleManifest {
 }
 ```
 
-The registry (`createRegistry(manifests, navGroups)`) validates ids and routes so mistakes fail the build. Each **nav group** is one top-bar page; modules that share a group become tabs in that page's panel. For example, `engine`, `game-review`, `openings` and `import-export` all sit under **Analysis**. The shell derives everything else from the manifests: the top bar, panel tabs, keyboard shortcuts, background controllers and the statically generated routes, via `generateStaticParams` in `app/[[...slug]]/page.tsx`. The workspace lives in the root layout, so the board, engine and review state survive navigation between modules.
+The registry (`createRegistry(manifests, navGroups)`) validates ids and routes so mistakes fail the build. Each **nav group** is one top-bar page; modules that share a group become tabs in that page's panel. For example, `game-review` (Report) and `engine` are the two tabs under **Analysis**. `openings` and `import-export` also belong to that group but are `hidden`: they stay routable (`/openings`, `/import`) without cluttering the tab bar. The shell derives everything else from the manifests: the top bar, panel tabs, keyboard shortcuts, background controllers and the statically generated routes, via `generateStaticParams` in `app/[[...slug]]/page.tsx`. The workspace lives in the root layout, so the board, engine and review state survive navigation between modules.
 
 ### Adding a module
 
@@ -208,7 +217,24 @@ That's all. `/puzzles` is generated at build time, and the module appears in the
   - `search(request, { onUpdate, supersede })` returns a handle with a `result` promise and `cancel()`.
   - **Race-freedom invariant:** jobs run strictly one at a time, and a new `go` is never sent until the previous search's `bestmove` has arrived. Every `info` line can therefore be attributed to exactly one search. A superseding search drops queued searches and sends `stop` to the running one. Late `info` lines from cancelled searches are ignored. Unit tests fire 25 overlapping requests at an async fake engine and assert that no lines leak between searches and that `go` never overlaps.
 - **Normalization.** UCI scores are relative to the side to move; they are converted to White's point of view (`mate 0` means the side to move is mated). Win % uses the lichess/Stockfish logistic curve (`k = 0.00368208`, cp clamped to ±1000).
-- **Roles.** Live analysis and game review share the `analysis` engine (user threads/hash); review pauses live analysis. The play-mode opponent has its own `play` engine (1 thread, 16 MB, strength-limited), so playing never disturbs analysis settings.
+- **Roles.** Live analysis and the Elo estimator use the `analysis` engine (user threads/hash). The play-mode opponent has its own `play` engine (1 thread, 16 MB, strength-limited). Game reports use a pool of `review-N` workers (single-threaded builds).
+
+### Performance
+
+Game review evaluates every main-line position at a fixed depth (default 16; Fast 12 and Deep 20 are available):
+
+- **Parallel workers.** `cores − 1` single-threaded Stockfish workers each search different positions. Many short searches scale far better this way than one engine with several threads. All cores was only about 5% faster and made the UI stutter, so one core is left free.
+- **Cheap "great" detection.** Each position gets one MultiPV-1 search. Only when the player then found the best move is there a second, reduced-depth search over the remaining moves (UCI `searchmoves`), to get the second-best score. This is cheaper than running MultiPV 2 everywhere. Note that `searchmoves` must be the last `go` argument: Stockfish reads every following token as a move, and a `depth` after it was silently ignored, giving an infinite search.
+- **Reproducible.** Worker k always owns positions k, k+W, k+2W… and walks them backwards, with its hash cleared once. Later positions lie inside earlier positions' search trees, so the hash keeps helping, and the same game always gives the same report on the same machine.
+- **Cached.** Evaluations are cached per position and depth, so re-running a report is instant.
+
+Measured on a 4-core machine, Kasparov–Topalov 1999 (88 positions):
+
+|                                     | before                                        | now                                         |
+| ----------------------------------- | --------------------------------------------- | ------------------------------------------- |
+| depth 14                            | 12.0 s (1 engine × 3 threads, best move only) | **8.2–9.4 s**, including second-best probes |
+| depth 16                            | —                                             | **≈18 s**                                   |
+| Opera Game, depth 16 (34 positions) | —                                             | ≈6–7 s                                      |
 
 ## Deployment
 
@@ -254,7 +280,7 @@ vercel git connect   # deploy automatically on push
 vercel --prod        # first production deploy
 ```
 
-After deploying, open the site and run `crossOriginIsolated` in the console; it should print `true`. The Analysis → Engine tab should show `· multi-threaded`.
+After deploying, open the site and run `crossOriginIsolated` in the console; it should print `true`. The Analysis → Engine tab (`/engine`) should show `· multi-threaded`.
 
 ## Licensing
 
@@ -285,5 +311,6 @@ The design is ready for these; none of them are built yet. Domain models and rep
 - The lite NNUE is weaker than full Stockfish (still far beyond human strength). Depth/nps are lower in single-threaded mode, for example on hosts without COOP/COEP or in browsers that refuse `SharedArrayBuffer`.
 - From 1320 up, play uses Stockfish's own `UCI_Elo` calibration (engine-vs-engine, long time controls), which can feel stronger than human ratings at the low end. Levels below 1320 come from Modulo's own weakening model, which is tuned by hand rather than calibrated against rated humans.
 - Elo estimates are heuristic. The accuracy and centipawn-loss curves are approximations of typical online ratings, and short or one-sided games carry little information. That's why a range is shown, and why the full 3-game mode is more reliable.
-- Accuracy uses a plain mean of per-move accuracy (lichess uses a volatility-weighted blend), so numbers differ slightly from lichess and chess.com.
+- Reports run the lite NNUE at depth 16 in the browser, where chess.com uses a full-strength engine on servers. In very sharp positions the evaluation, and therefore some classes, can differ from chess.com. The thresholds for brilliant, great and miss are my own reading of chess.com's published definitions (their exact rules are not public).
+- The per-game Elo estimate is heuristic and works best on games of 20+ moves. It reflects how accurately someone played in _this_ game, which depends on how sharp the game was.
 - Under Partial Prerendering, unknown URLs show the in-app "Off the board" message but return HTTP 200.
