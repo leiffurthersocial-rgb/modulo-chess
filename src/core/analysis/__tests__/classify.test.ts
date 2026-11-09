@@ -36,10 +36,15 @@ describe("winPercentLoss", () => {
 
 describe("classifyMove", () => {
   it("marks the engine's top move as best", () => {
-    expect(classifyMove({ mover: "w", before: cp(30), after: cp(25), played: "e2e4", best: "e2e4" }).class).toBe("best");
+    expect(
+      classifyMove({ mover: "w", before: cp(30), after: cp(25), played: "e2e4", best: "e2e4" }).class,
+    ).toBe("best");
   });
   it("marks book moves regardless of eval", () => {
-    expect(classifyMove({ mover: "w", before: cp(30), after: cp(-30), played: "f2f3", best: "e2e4", isBook: true }).class).toBe("book");
+    expect(
+      classifyMove({ mover: "w", before: cp(30), after: cp(-30), played: "f2f3", best: "e2e4", isBook: true })
+        .class,
+    ).toBe("book");
   });
   it("detects a blunder that throws away a winning position", () => {
     const r = classifyMove({ mover: "w", before: cp(500), after: cp(-200), played: "d1h5", best: "e2e4" });
@@ -47,18 +52,28 @@ describe("classifyMove", () => {
     expect(r.accuracy).toBeLessThan(30);
   });
   it("detects a missed mate as a blunder", () => {
-    expect(classifyMove({ mover: "w", before: mate(2, "w"), after: cp(0), played: "a2a3", best: "h5f7" }).class).toBe("blunder");
+    expect(
+      classifyMove({ mover: "w", before: mate(2, "w"), after: cp(0), played: "a2a3", best: "h5f7" }).class,
+    ).toBe("blunder");
   });
   it("walking into a mate is a blunder for Black", () => {
-    expect(classifyMove({ mover: "b", before: cp(0), after: mate(1, "w"), played: "g7g5", best: "e7e5" }).class).toBe("blunder");
+    expect(
+      classifyMove({ mover: "b", before: cp(0), after: mate(1, "w"), played: "g7g5", best: "e7e5" }).class,
+    ).toBe("blunder");
   });
   it("small slips in a lost position are not punished", () => {
     // Already −8: losing another pawn barely changes win probability.
-    expect(classifyMove({ mover: "w", before: cp(-800), after: cp(-900), played: "a2a3", best: "b2b3" }).class).toBe("excellent");
+    expect(
+      classifyMove({ mover: "w", before: cp(-800), after: cp(-900), played: "a2a3", best: "b2b3" }).class,
+    ).toBe("excellent");
   });
   it("classifies a medium loss as an inaccuracy or mistake", () => {
-    expect(classifyMove({ mover: "w", before: cp(50), after: cp(-20), played: "a2a3", best: "e2e4" }).class).toBe("inaccuracy");
-    expect(classifyMove({ mover: "w", before: cp(50), after: cp(-120), played: "a2a3", best: "e2e4" }).class).toBe("mistake");
+    expect(
+      classifyMove({ mover: "w", before: cp(50), after: cp(-20), played: "a2a3", best: "e2e4" }).class,
+    ).toBe("inaccuracy");
+    expect(
+      classifyMove({ mover: "w", before: cp(50), after: cp(-120), played: "a2a3", best: "e2e4" }).class,
+    ).toBe("mistake");
   });
 });
 

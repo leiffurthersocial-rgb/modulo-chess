@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   evalToComparable,
   formatEval,
+  formatEvalShort,
   normalizeScore,
   whiteWinPercent,
   winPercentFor,
@@ -43,7 +44,9 @@ describe("win percentage", () => {
     expect(whiteWinPercent({ kind: "cp", cp: 5000 })).toBeCloseTo(whiteWinPercent({ kind: "cp", cp: 1000 }));
   });
   it("is computed from either side", () => {
-    expect(winPercentFor({ kind: "cp", cp: 100 }, "b")).toBeCloseTo(100 - whiteWinPercent({ kind: "cp", cp: 100 }));
+    expect(winPercentFor({ kind: "cp", cp: 100 }, "b")).toBeCloseTo(
+      100 - whiteWinPercent({ kind: "cp", cp: 100 }),
+    );
   });
 });
 
@@ -67,5 +70,13 @@ describe("evalToComparable", () => {
     expect(m1).toBeGreaterThan(m5);
     expect(m5).toBeGreaterThan(evalToComparable({ kind: "cp", cp: 2000 }));
     expect(evalToComparable({ kind: "mate", moves: 1, winner: "b" })).toBeLessThan(-2000);
+  });
+});
+
+describe("formatEvalShort", () => {
+  it("fits the eval bar", () => {
+    expect(formatEvalShort({ kind: "cp", cp: 35 })).toBe("0.3");
+    expect(formatEvalShort({ kind: "cp", cp: -1234 })).toBe("12");
+    expect(formatEvalShort({ kind: "mate", moves: 3, winner: "b" })).toBe("M3");
   });
 });

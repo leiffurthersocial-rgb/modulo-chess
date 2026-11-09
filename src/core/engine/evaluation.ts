@@ -48,6 +48,13 @@ export function formatEval(ev: Evaluation, { sign = true }: { sign?: boolean } =
   return `−${abs}`;
 }
 
+/** Compact label for the eval bar: "0.4", "12", "M3", "1-0". Always unsigned. */
+export function formatEvalShort(ev: Evaluation): string {
+  if (ev.kind === "mate") return ev.moves === 0 ? (ev.winner === "w" ? "1-0" : "0-1") : `M${ev.moves}`;
+  const p = Math.abs(ev.cp / 100);
+  return p >= 9.95 ? String(Math.round(p)) : p.toFixed(1);
+}
+
 /** Orders evaluations from White's point of view (higher is better for White). */
 export function evalToComparable(ev: Evaluation): number {
   if (ev.kind === "mate") {

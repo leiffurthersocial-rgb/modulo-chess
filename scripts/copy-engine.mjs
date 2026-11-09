@@ -35,8 +35,15 @@ cpSync(join(dirname(pkgPath), "Copying.txt"), join(outDir, "COPYING.txt"));
 
 // The app hardcodes the engine path (src/core/engine/assets.ts); fail loudly on drift.
 const assetsTs = readFileSync(join(root, "src", "core", "engine", "assets.ts"), "utf8");
-if (!assetsTs.includes(`STOCKFISH_VERSION = "${pkg.version}"`) || !assetsTs.includes(`STOCKFISH_BUILD = "${pkg.buildVersion}"`)) {
-  console.error(`[copy-engine] src/core/engine/assets.ts does not match stockfish ${pkg.version} (build ${pkg.buildVersion}). Update it.`);
+if (
+  !assetsTs.includes(`STOCKFISH_VERSION = "${pkg.version}"`) ||
+  !assetsTs.includes(`STOCKFISH_BUILD = "${pkg.buildVersion}"`)
+) {
+  console.error(
+    `[copy-engine] src/core/engine/assets.ts does not match stockfish ${pkg.version} (build ${pkg.buildVersion}). Update it.`,
+  );
   process.exit(1);
 }
-console.log(`[copy-engine] Stockfish ${pkg.version} (${FLAVORS.join(", ")}) -> public/stockfish/${pkg.version}`);
+console.log(
+  `[copy-engine] Stockfish ${pkg.version} (${FLAVORS.join(", ")}) -> public/stockfish/${pkg.version}`,
+);

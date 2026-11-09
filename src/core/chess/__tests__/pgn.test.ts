@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { PgnError, checkFen, parseGame, parsePgn, serializePgn, splitGames } from "../pgn";
-import { addMove, createTree, deleteNode, isOnMainline, mainline, promoteVariation, uciLineToSan, formatSanLine } from "../tree";
+import {
+  addMove,
+  createTree,
+  deleteNode,
+  isOnMainline,
+  mainline,
+  promoteVariation,
+  uciLineToSan,
+  formatSanLine,
+} from "../tree";
 
-const sans = (tree: ReturnType<typeof createTree>) => mainline(tree).slice(1).map((n) => n.san);
+const sans = (tree: ReturnType<typeof createTree>) =>
+  mainline(tree)
+    .slice(1)
+    .map((n) => n.san);
 
 describe("parseGame", () => {
   it("parses headers, moves, comments, NAGs and result", () => {
@@ -74,11 +86,14 @@ describe("splitGames / parsePgn", () => {
 
 describe("serializePgn", () => {
   it("round-trips variations, comments and NAGs", () => {
-    const src = "{Start} 1. e4 $1 { best by test } (1. d4 d5 (1... Nf6 2. c4) 2. c4) 1... e5 (1... c5 2. Nf3) 2. Nf3 Nc6 *";
+    const src =
+      "{Start} 1. e4 $1 { best by test } (1. d4 d5 (1... Nf6 2. c4) 2. c4) 1... e5 (1... c5 2. Nf3) 2. Nf3 Nc6 *";
     const g = parseGame(src);
     const out = serializePgn(g.tree, { headers: { Event: "RT" } });
     expect(out).toContain('[Event "RT"]');
-    expect(out.replace(/\s+/g, " ")).toContain("1. e4 $1 { best by test } (1. d4 d5 (1... Nf6 2. c4) 2. c4) 1... e5 (1... c5 2. Nf3) 2. Nf3 Nc6 *");
+    expect(out.replace(/\s+/g, " ")).toContain(
+      "1. e4 $1 { best by test } (1. d4 d5 (1... Nf6 2. c4) 2. c4) 1... e5 (1... c5 2. Nf3) 2. Nf3 Nc6 *",
+    );
     const again = parseGame(out);
     expect(serializePgn(again.tree, { headers: { Event: "RT" } })).toBe(out);
   });

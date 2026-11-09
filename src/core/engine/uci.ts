@@ -111,7 +111,5 @@ export function buildPosition(fen: string, moves: string[] = []): string {
 }
 
 export function buildSetOption(name: string, value?: string | number | boolean): string {
-  return value === undefined
-    ? `setoption name ${name}`
-    : `setoption name ${name} value ${String(value)}`;
+  return value === undefined ? `setoption name ${name}` : `setoption name ${name} value ${String(value)}`;
 }

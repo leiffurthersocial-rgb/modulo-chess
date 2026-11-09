@@ -11,7 +11,12 @@ class FakeEngine implements EngineTransport {
   sent: string[] = [];
   private lineListeners = new Set<(l: string) => void>();
   private errorListeners = new Set<(e: Error) => void>();
-  private searching: { seq: number; timer: ReturnType<typeof setInterval>; depth: number; maxDepth: number } | null = null;
+  private searching: {
+    seq: number;
+    timer: ReturnType<typeof setInterval>;
+    depth: number;
+    maxDepth: number;
+  } | null = null;
   private seq = 0;
   multiPv = 1;
   constructor(private readonly opts: { failInit?: boolean; neverReady?: boolean } = {}) {}
@@ -61,7 +66,9 @@ class FakeEngine implements EngineTransport {
         timer: setInterval(() => {
           s.depth++;
           for (let k = 1; k <= this.multiPv; k++) {
-            this.emit(`info depth ${s.depth} seldepth ${s.depth + 2} multipv ${k} score cp ${seq * 100 + k} nodes ${s.depth * 1000} nps 50000 time ${s.depth} pv e2e4 e7e5`);
+            this.emit(
+              `info depth ${s.depth} seldepth ${s.depth + 2} multipv ${k} score cp ${seq * 100 + k} nodes ${s.depth * 1000} nps 50000 time ${s.depth} pv e2e4 e7e5`,
+            );
           }
           if (s.depth >= s.maxDepth) this.finish();
         }, 1),
@@ -102,7 +109,10 @@ describe("EngineService", () => {
   it("runs a depth-limited search with multipv and normalised evals", async () => {
     const { service } = setup();
     const updates: SearchSnapshot[] = [];
-    const result = await service.analyze({ fen: BLACK, depth: 4, multiPv: 3 }, { onUpdate: (s) => updates.push(s) });
+    const result = await service.analyze(
+      { fen: BLACK, depth: 4, multiPv: 3 },
+      { onUpdate: (s) => updates.push(s) },
+    );
     expect(result.cancelled).toBe(false);
     expect(result.bestMove).toBe("e2e4");
     expect(result.lines.map((l) => l.multipv)).toEqual([1, 2, 3]);

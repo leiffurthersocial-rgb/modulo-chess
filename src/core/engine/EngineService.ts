@@ -1,12 +1,6 @@
 import { normalizeScore } from "./evaluation";
 import type { EngineTransport } from "./transport";
-import type {
-  EngineLine,
-  SearchResult,
-  SearchSnapshot,
-  SearchStats,
-  UciOption,
-} from "./types";
+import type { EngineLine, SearchResult, SearchSnapshot, SearchStats, UciOption } from "./types";
 import { buildGo, buildPosition, buildSetOption, parseBestMove, parseInfo, parseOption } from "./uci";
 
 export type EngineStatus = "idle" | "loading" | "ready" | "error" | "disposed";

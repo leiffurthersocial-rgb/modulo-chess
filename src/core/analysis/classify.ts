@@ -1,14 +1,7 @@
 import { winPercentFor, type Side } from "../engine/evaluation";
 import type { Evaluation } from "../engine/types";
 
-export type MoveClass =
-  | "book"
-  | "best"
-  | "excellent"
-  | "good"
-  | "inaccuracy"
-  | "mistake"
-  | "blunder";
+export type MoveClass = "book" | "best" | "excellent" | "good" | "inaccuracy" | "mistake" | "blunder";
 
 /**
  * Thresholds on win-percentage loss (0–100 scale) from the mover's point of view.

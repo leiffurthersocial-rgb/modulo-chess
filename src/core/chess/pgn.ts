@@ -89,7 +89,11 @@ function tokenize(movetext: string): Token[] {
 }
 
 function normalizeSan(san: string): string {
-  return san.replace(/0-0-0/g, "O-O-O").replace(/0-0/g, "O-O").replace(/[+#]+$/, "").replace(/^P(?=[a-h])/, "");
+  return san
+    .replace(/0-0-0/g, "O-O-O")
+    .replace(/0-0/g, "O-O")
+    .replace(/[+#]+$/, "")
+    .replace(/^P(?=[a-h])/, "");
 }
 
 /** Splits a PGN database into individual game texts. */

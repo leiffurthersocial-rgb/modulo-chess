@@ -1,12 +1,8 @@
 /** Score as reported by UCI: always relative to the side to move. */
-export type RelativeScore =
-  | { kind: "cp"; value: number }
-  | { kind: "mate"; value: number }; // > 0: side to move mates in N; <= 0: side to move is mated in |N|
+export type RelativeScore = { kind: "cp"; value: number } | { kind: "mate"; value: number }; // > 0: side to move mates in N; <= 0: side to move is mated in |N|
 
 /** Score normalised to White's point of view. */
-export type Evaluation =
-  | { kind: "cp"; cp: number }
-  | { kind: "mate"; moves: number; winner: "w" | "b" }; // moves: plies-to-mate in full moves (0 = already mate)
+export type Evaluation = { kind: "cp"; cp: number } | { kind: "mate"; moves: number; winner: "w" | "b" }; // moves: plies-to-mate in full moves (0 = already mate)
 
 export interface UciInfo {
   depth?: number;
