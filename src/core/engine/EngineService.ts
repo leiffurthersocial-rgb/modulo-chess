@@ -22,6 +22,8 @@ export interface SearchRequest {
   infinite?: boolean;
   /** Number of principal variations (MultiPV). Defaults to 1. */
   multiPv?: number;
+  /** Only consider these moves (UCI `searchmoves`). */
+  searchmoves?: string[];
 }
 
 export interface SearchHandle {
@@ -308,6 +310,7 @@ export class EngineService {
               movetime: request.movetime,
               nodes: request.nodes,
               infinite: request.infinite,
+              searchmoves: request.searchmoves,
             }),
           );
           job.started = true;

@@ -2,10 +2,11 @@ import { bootEngine, type BootedEngine, type FlavorPreference } from "./browser"
 
 /**
  * Engines are keyed by role so that features never fight over one worker:
- *  - "analysis": live analysis and game review (user-configured threads/hash)
+ *  - "analysis": live analysis and the Elo estimator (user-configured threads/hash)
  *  - "play": the opponent in play mode (1 thread, small hash, strength-limited)
+ *  - "review-N": parallel single-threaded workers for full-game review
  */
-export type EngineRole = "analysis" | "play";
+export type EngineRole = "analysis" | "play" | `review-${number}`;
 
 const engines = new Map<EngineRole, { pref: FlavorPreference; promise: Promise<BootedEngine> }>();
 

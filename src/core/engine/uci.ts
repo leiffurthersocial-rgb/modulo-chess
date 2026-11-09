@@ -89,6 +89,8 @@ export function parseOption(line: string): UciOption | null {
 }
 
 export interface GoParams {
+  /** Restrict the search to these moves (UCI `searchmoves`). */
+  searchmoves?: string[];
   depth?: number;
   movetime?: number;
   nodes?: number;
@@ -96,12 +98,14 @@ export interface GoParams {
 }
 
 /** Builds a `go` command. With no limits it searches infinitely (must be stopped). */
-export function buildGo({ depth, movetime, nodes, infinite }: GoParams): string {
+export function buildGo({ depth, movetime, nodes, infinite, searchmoves }: GoParams): string {
   const parts = ["go"];
   if (depth && depth > 0) parts.push("depth", String(Math.floor(depth)));
   if (movetime && movetime > 0) parts.push("movetime", String(Math.floor(movetime)));
   if (nodes && nodes > 0) parts.push("nodes", String(Math.floor(nodes)));
-  if (infinite || parts.length === 1) parts.push("infinite");
+  if (infinite || !(depth || movetime || nodes)) parts.push("infinite");
+  // Must be last: Stockfish reads every remaining token as a move.
+  if (searchmoves?.length) parts.push("searchmoves", ...searchmoves);
   return parts.join(" ");
 }
 

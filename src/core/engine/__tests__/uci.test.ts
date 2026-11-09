@@ -92,6 +92,9 @@ describe("command builders", () => {
     expect(buildGo({})).toBe("go infinite");
     expect(buildGo({ depth: 18 })).toBe("go depth 18");
     expect(buildGo({ depth: 14, movetime: 2000 })).toBe("go depth 14 movetime 2000");
+    // searchmoves must come last — Stockfish treats all following tokens as moves.
+    expect(buildGo({ depth: 10, searchmoves: ["e2e4", "d2d4"] })).toBe("go depth 10 searchmoves e2e4 d2d4");
+    expect(buildGo({ searchmoves: ["e2e4"] })).toBe("go infinite searchmoves e2e4");
   });
   it("builds position commands", () => {
     expect(buildPosition("8/8/8/8/8/8/8/K6k w - - 0 1")).toBe("position fen 8/8/8/8/8/8/8/K6k w - - 0 1");
